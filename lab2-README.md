@@ -1,6 +1,6 @@
 # Interactive Courtyard
 
-| Interaction  Trigger |
+| Interaction | Trigger |
 |------------|----------|
 | Julia - Teleport | Joystick and release|
 | Julia - Pickup and throw cube | Grab |
