@@ -1,5 +1,5 @@
 # Interactive Courtyard Lab 2
-**Demo**: 
+**Demo**: https://youtu.be/LVxwcEbg8us
 
 | Interaction | Trigger |
 |------------|----------|
