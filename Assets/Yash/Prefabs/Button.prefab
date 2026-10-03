@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 4828675791385105497}
   - component: {fileID: 4449950322762231375}
   - component: {fileID: 6779604615717648924}
+  - component: {fileID: 1497040152202046256}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -163,17 +164,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7342410798470814831}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: 0.09812253, z: -0, w: 0.9951744}
+  m_LocalPosition: {x: 0, y: 0, z: 81.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2314651752751278215}
   m_Father: {fileID: 7649415389808211299}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 11.262, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 16.2, y: 0}
   m_SizeDelta: {x: 150, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4704447301234297479
@@ -257,7 +258,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4150412564438285721}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
 --- !u!114 &4449950322762231375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -339,22 +352,38 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7342410798470814831}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c145b3e21a07a47a2be32509f09b43e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VRSpawnButton
-  prefabToSpawn: {fileID: 9116473350091477334, guid: 94eee4136ead94a92a50de9d09001ff2, type: 3}
+  prefabToSpawn: {fileID: 0}
   spawnPoint: {fileID: 0}
   parent: {fileID: 0}
   spawnOnlyOnce: 0
   destroyPreviousInstance: 0
   cooldown: 0.5
+  startupGracePeriod: 1
+  spawnOnRelease: 0
   visualToPress: {fileID: 0}
   pressDepth: 0.01
   clickSound: {fileID: 0}
   hapticAmplitude: 0.5
   hapticDuration: 0.1
+  debugLogs: 1
+--- !u!114 &1497040152202046256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7342410798470814831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e306a0efd852941f6af45e716030576c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  sphere: {fileID: 0}
 --- !u!1 &8192354069125392516
 GameObject:
   m_ObjectHideFlags: 0
