@@ -1,4 +1,4 @@
-# Interactive Courtyard
+# Interactive Courtyard Lab 2
 
 | Interaction | Trigger |
 |------------|----------|
