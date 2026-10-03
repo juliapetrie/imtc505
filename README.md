@@ -11,5 +11,5 @@
 | Yash - On click interaction | Capsule moves on click | Click capsule to see it move up and down |
 
 ## Assets
-backpack: https://poly.pizza/m/vF7TuXCPDH
-ubc courtyard landscape
+- backpack: https://poly.pizza/m/vF7TuXCPDH
+- ubc courtyard landscape
