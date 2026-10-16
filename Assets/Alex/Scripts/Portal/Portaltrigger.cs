@@ -22,7 +22,6 @@ public class PortalTrigger : MonoBehaviour
     [Header("Leaving a memory")]
     public bool completesMemory = false;
     public string memoryId;
-    [Range(0f, 1f)] public float lightGain = 0.2f;
 
     [Header("Feedback (optional)")]
     public AudioSource enterSound;
@@ -45,7 +44,7 @@ public class PortalTrigger : MonoBehaviour
             GameState.SetReturnPoint(returnPoint.position, returnPoint.rotation);
 
         if (completesMemory)
-            GameState.CompleteMemory(memoryId, lightGain);
+            GameState.CompleteMemory(memoryId);
 
         if (enterSound != null) enterSound.Play();
 
@@ -56,6 +55,6 @@ public class PortalTrigger : MonoBehaviour
             return;
         }
 
-        StartCoroutine(ScreenFader.Instance.LoadSceneWithFade(sceneToLoad, fadeDuration));
+        ScreenFader.Instance.LoadScene(sceneToLoad, fadeDuration);
     }
 }

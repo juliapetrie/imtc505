@@ -97,6 +97,15 @@ public class ScreenFader : MonoBehaviour
         SetAlpha(targetAlpha);
     }
 
+    /// <summary>
+    /// Call this from other scripts. The coroutine runs on the fader, which
+    /// survives scene loads (a coroutine on the portal would die with its scene).
+    /// </summary>
+    public void LoadScene(string sceneName, float duration = -1f)
+    {
+        StartCoroutine(LoadSceneWithFade(sceneName, duration));
+    }
+
     /// <summary>Fade out, load the scene, fade back in.</summary>
     public IEnumerator LoadSceneWithFade(string sceneName, float duration = -1f)
     {
