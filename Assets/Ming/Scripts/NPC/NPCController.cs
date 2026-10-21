@@ -70,9 +70,11 @@ public class NPCController : MonoBehaviour
 
     private void Update()
     {
-        if (!agent.isOnNavMesh || player == null) return;
+        if (!agent.isOnNavMesh) return;
 
-        float distance = GroundDistance(player.position);
+        float distance = player != null
+            ? GroundDistance(player.position)
+            : float.PositiveInfinity;
         switch (State)
         {
             case NPCState.Wandering:
