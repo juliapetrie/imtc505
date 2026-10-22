@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -33,6 +34,11 @@ public class StickRoller : MonoBehaviour
     public Behaviour[] disableWhileHeldLeft;
     [Tooltip("Same for the RIGHT hand's interactor.")]
     public Behaviour[] disableWhileHeldRight;
+
+    [Tooltip("While held, switches off the rig's turn providers (Snap/Continuous Turn) if the RIGHT hand holds the stick, " +
+             "or the Move provider if the LEFT hand does, so rolling doesn't turn or move you. " +
+             "Assumes the default XRI layout: left stick = move, right stick = turn.")]
+    public bool blockLocomotionWhileHeld = true;
 
     [Header("Debug")]
     public bool debugLog;
@@ -75,6 +81,7 @@ public class StickRoller : MonoBehaviour
         rightStick.Disable();
         if (active != null) SetBlockers(heldLeft ? disableWhileHeldLeft : disableWhileHeldRight, true);
         RestoreController();
+        RestoreLocomotion();
         active = null;
     }
 
@@ -89,6 +96,7 @@ public class StickRoller : MonoBehaviour
         bool left = args.interactorObject.handedness == InteractorHandedness.Left;
         active = left ? leftStick : rightStick;
         heldLeft = left;
+        BlockLocomotion(left);
         SetBlockers(left ? disableWhileHeldLeft : disableWhileHeldRight, false);
 
         RestoreController();
@@ -107,6 +115,32 @@ public class StickRoller : MonoBehaviour
     }
 
     bool heldLeft;
+    readonly List<Behaviour> disabledProviders = new List<Behaviour>();
+
+    void BlockLocomotion(bool leftHand)
+    {
+        RestoreLocomotion();
+        if (!blockLocomotionWhileHeld) return;
+        foreach (var b in FindObjectsByType<Behaviour>(FindObjectsSortMode.None))
+        {
+            if (b == null || !b.enabled) continue;
+            string n = b.GetType().Name;
+            bool isTurn = n.Contains("SnapTurn") || n.Contains("ContinuousTurn");
+            bool isMove = n.Contains("ContinuousMove");
+            if ((leftHand && isMove) || (!leftHand && isTurn))
+            {
+                b.enabled = false;
+                disabledProviders.Add(b);
+                if (debugLog) Debug.Log("StickRoller: disabled " + n + " while held", b);
+            }
+        }
+    }
+
+    void RestoreLocomotion()
+    {
+        foreach (var b in disabledProviders) if (b != null) b.enabled = true;
+        disabledProviders.Clear();
+    }
     InteractionAttachController heldController;
     InteractionAttachController.ManipulationXAxisMode savedXMode;
 
@@ -125,6 +159,7 @@ public class StickRoller : MonoBehaviour
     void OnRelease(SelectExitEventArgs args)
     {
         RestoreController();
+        RestoreLocomotion();
         SetBlockers(heldLeft ? disableWhileHeldLeft : disableWhileHeldRight, true);
         active = null;
     }
