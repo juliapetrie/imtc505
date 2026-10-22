@@ -50,6 +50,7 @@ public class RoastableMarshmallow : MonoBehaviour
 
     void Awake()
     {
+        if (fire == null) fire = FindFirstObjectByType<CampfireHeatZone>();
         if (cookGradient == null || cookGradient.colorKeys.Length < 2) cookGradient = DefaultGradient();
 
         var mf = GetComponent<MeshFilter>();
