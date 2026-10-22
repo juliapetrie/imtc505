@@ -16,6 +16,9 @@ public class CampfireHeatZone : MonoBehaviour
 
     Vector3 Center => heatCenter != null ? heatCenter.position : transform.position;
 
+    /// <summary>World position of the flames.</summary>
+    public Vector3 CenterPosition => Center;
+
     /// <summary>Returns 0 outside the radius, 0..1 inside.</summary>
     public float GetHeat(Vector3 worldPos)
     {
