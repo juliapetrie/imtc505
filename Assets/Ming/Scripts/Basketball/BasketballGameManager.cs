@@ -8,32 +8,145 @@ public class BasketballGameManager : MonoBehaviour
     [Header("References")]
     public Rigidbody ball;
     public Transform spawnPoint;
+    public Transform playerHead;
+    public Transform hoopCenter;
     public TMP_Text scoreText;
     public ParticleSystem scoreEffect;
     public AudioSource scoreSound;
 
-    [Header("Settings")]
-    public float missResetDelay = 5f;
+    [Header("Game Rules")]
+    public float minThrowDistance = 1.8f;
+    public float missResetDelay = 6f;
     public float scoreResetDelay = 2f;
+    public float maxDistanceFromSpawn = 8f;
+    public float resetBelowY = -0.8f;
 
     private int score = 0;
-    private bool upperPassed = false;
-    private bool scoredThisShot = false;
-    private float upperPassTime;
-    private Coroutine resetRoutine;
 
-    
+    private bool isHeld;
+    private bool inFlight;
+    private bool validShot;
+    private bool upperPassed;
+    private bool scoredThisShot;
+
+    private float upperPassTime;
+    private float resetDeadline =
+        float.PositiveInfinity;
+
     private void Start()
     {
         UpdateScoreText();
         ResetBall();
     }
 
-    public void EnterUpper(Rigidbody other)
+    private void Update()
     {
-        if (other != ball || scoredThisShot)
+        // Never reset while the player is holding the ball.
+        if (isHeld)
             return;
 
+        if (ball == null || spawnPoint == null)
+            return;
+
+        // Automatically reset after scoring or timeout.
+        if (Time.time >= resetDeadline)
+        {
+            ResetBall();
+            return;
+        }
+
+        if (!inFlight)
+            return;
+
+        Vector3 difference =
+            ball.position - spawnPoint.position;
+
+        // Horizontal distance, ignoring height.
+        difference.y = 0f;
+
+        bool outOfBounds =
+            difference.magnitude > maxDistanceFromSpawn;
+
+        bool fellBelowGround =
+            ball.position.y < resetBelowY;
+
+        if (outOfBounds || fellBelowGround)
+        {
+            ResetBall();
+        }
+    }
+
+    public void OnBallGrabbed()
+    {
+        isHeld = true;
+        inFlight = false;
+        validShot = false;
+        upperPassed = false;
+        scoredThisShot = false;
+
+        resetDeadline = float.PositiveInfinity;
+
+        // Unlock the hovering ball.
+        ball.isKinematic = false;
+        ball.constraints = RigidbodyConstraints.None;
+        ball.useGravity = false;
+
+        Debug.Log("Basketball grabbed");
+    }
+
+    
+    public void OnBallReleased()
+    {
+        isHeld = false;
+        inFlight = true;
+
+        // No distance restriction.
+        validShot = true;
+
+        upperPassed = false;
+        scoredThisShot = false;
+
+        // Restore normal physics.
+        ball.isKinematic = false;
+        ball.constraints = RigidbodyConstraints.None;
+        ball.useGravity = true;
+
+        resetDeadline = Time.time + missResetDelay;
+
+        StartCoroutine(VerifyReleasePhysics());
+
+        Debug.Log("Basketball released");
+    }
+
+
+    private IEnumerator VerifyReleasePhysics()
+    {
+        yield return null;
+
+        if (isHeld || !inFlight)
+            yield break;
+
+        ball.isKinematic = false;
+        ball.constraints = RigidbodyConstraints.None;
+        ball.useGravity = true;
+        Debug.Log(
+            $"Gravity={ball.useGravity}, " +
+            $"Kinematic={ball.isKinematic}, " +
+            $"Constraints={ball.constraints}, " +
+            $"Velocity={ball.linearVelocity}, " +
+            $"WorldGravity={Physics.gravity}"
+        );
+    }
+
+    public void EnterUpper(Rigidbody other)
+    {
+        if (other != ball)
+            return;
+
+        if (!inFlight || !validShot || scoredThisShot)
+            return;
+
+        // Ball must be moving downward.
         if (ball.linearVelocity.y >= -0.1f)
             return;
 
@@ -43,16 +156,25 @@ public class BasketballGameManager : MonoBehaviour
 
     public void EnterLower(Rigidbody other)
     {
-        if (other != ball || scoredThisShot)
+        if (other != ball)
             return;
 
-        if (!upperPassed || Time.time - upperPassTime > 1f)
+        if (!inFlight || !validShot || scoredThisShot)
+            return;
+
+        if (!upperPassed)
+            return;
+
+        if (Time.time - upperPassTime > 1f)
             return;
 
         if (ball.linearVelocity.y >= -0.1f)
             return;
 
+        // Successful shot.
         scoredThisShot = true;
+        inFlight = false;
+
         score++;
         UpdateScoreText();
 
@@ -62,33 +184,37 @@ public class BasketballGameManager : MonoBehaviour
         if (scoreSound != null)
             scoreSound.Play();
 
-        ScheduleReset(scoreResetDelay);
+        resetDeadline = Time.time + scoreResetDelay;
+
+        Debug.Log("Basket scored! Total: " + score);
     }
 
     
-    public void OnBallGrabbed()
+    public void ResetBall()
     {
-        CancelReset();
+        if (ball == null || spawnPoint == null || isHeld)
+            return;
 
+        isHeld = false;
+        inFlight = false;
+        validShot = false;
         upperPassed = false;
         scoredThisShot = false;
 
-        // 允许篮球跟随 VR 手柄移动
+        resetDeadline = float.PositiveInfinity;
+
+        // Keep the Rigidbody dynamic.
+        ball.isKinematic = false;
         ball.constraints = RigidbodyConstraints.None;
 
-        // 抓取期间不受重力影响！
+        // Suspend gravity while waiting for the next shot.
         ball.useGravity = false;
-    }
 
+        ball.linearVelocity = Vector3.zero;
+        ball.angularVelocity = Vector3.zero;
 
-    
-    public void OnBallReleased()
-    {
-        // 篮球开始正常飞行
-        ball.useGravity = true;
-
-        // 5 秒后自动重置
-        ScheduleReset(missResetDelay);
+        ball.position = spawnPoint.position;
+        ball.rotation = spawnPoint.rotation;
     }
 
 
@@ -96,55 +222,5 @@ public class BasketballGameManager : MonoBehaviour
     {
         if (scoreText != null)
             scoreText.text = "SCORE: " + score;
-    }
-
-    private void ScheduleReset(float delay)
-    {
-        CancelReset();
-        resetRoutine = StartCoroutine(ResetAfter(delay));
-    }
-
-    private IEnumerator ResetAfter(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        resetRoutine = null;
-        ResetBall();
-    }
-
-    private void CancelReset()
-    {
-        if (resetRoutine != null)
-        {
-            StopCoroutine(resetRoutine);
-            resetRoutine = null;
-        }
-    }
-
-    
-    public void ResetBall()
-    {
-        if (ball == null || spawnPoint == null)
-            return;
-
-        CancelReset();
-
-        // 先恢复可运动状态，以便清除速度
-        ball.isKinematic = false;
-        ball.constraints = RigidbodyConstraints.None;
-        ball.useGravity = false;
-
-        // 清除之前的运动速度
-        ball.linearVelocity = Vector3.zero;
-        ball.angularVelocity = Vector3.zero;
-
-        // 回到指定位置
-        ball.position = spawnPoint.position;
-        ball.rotation = spawnPoint.rotation;
-
-        // 冻结篮球，使其悬停
-        ball.constraints = RigidbodyConstraints.FreezeAll;
-
-        upperPassed = false;
-        scoredThisShot = false;
     }
 }

@@ -187,6 +187,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HoopScoreSensor
   gameManager: {fileID: 1451942146}
   isUpperSensor: 0
+--- !u!1 &118256990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 118256991}
+  m_Layer: 0
+  m_Name: HoopCenter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &118256991
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118256990}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6829972711175688821}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &545831896
 GameObject:
   m_ObjectHideFlags: 0
@@ -502,7 +533,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -554,7 +585,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.12
+      value: -5
       objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_LocalRotation.w
@@ -649,6 +680,11 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!4 &886278464 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1767192434, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 886278461}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1135557148
 GameObject:
   m_ObjectHideFlags: 0
@@ -817,7 +853,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0.54, y: 3.36}
+  m_AnchoredPosition: {x: -0.54, y: 3.36}
   m_SizeDelta: {x: 500, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1451942144
@@ -866,11 +902,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BasketballGameManager
   ball: {fileID: 3887399177757834566}
   spawnPoint: {fileID: 1873024624}
+  playerHead: {fileID: 886278464}
+  hoopCenter: {fileID: 118256991}
   scoreText: {fileID: 1955457069}
   scoreEffect: {fileID: 0}
   scoreSound: {fileID: 0}
-  missResetDelay: 5
+  minThrowDistance: 1.8
+  missResetDelay: 3
   scoreResetDelay: 2
+  maxDistanceFromSpawn: 8
+  resetBelowY: -0.8
 --- !u!1 &1873024623
 GameObject:
   m_ObjectHideFlags: 0
@@ -896,7 +937,7 @@ Transform:
   m_GameObject: {fileID: 1873024623}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1, z: -4}
+  m_LocalPosition: {x: 0, y: 1.1, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1105,7 +1146,7 @@ Transform:
   m_GameObject: {fileID: 3887399177757834563}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1, z: -4}
+  m_LocalPosition: {x: 0, y: 1.1, z: -3}
   m_LocalScale: {x: 24, y: 24, z: 24}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1197,7 +1238,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1451942146}
         m_TargetAssemblyTypeName: BasketballGameManager, Assembly-CSharp
-        m_MethodName: OnBallGrabbed
+        m_MethodName: OnBallReleased
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1332,7 +1373,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 126
+  m_Constraints: 0
   m_CollisionDetection: 2
 --- !u!4 &4874183100074378558
 Transform:
@@ -1343,7 +1384,7 @@ Transform:
   m_GameObject: {fileID: 5255493064290803588}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.1, z: -2}
+  m_LocalPosition: {x: 0, y: 2.1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1431,6 +1472,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8784798631435985434}
+  - {fileID: 118256991}
   m_Father: {fileID: 4874183100074378558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &7238925032986486591
