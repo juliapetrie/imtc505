@@ -218,6 +218,40 @@ public class BasketballGameManager : MonoBehaviour
     }
 
 
+    private void FixedUpdate()
+    {
+        if (ball == null || spawnPoint == null)
+            return;
+
+        // Let XR Interaction Toolkit control the ball
+        // while the player is holding it.
+        if (isHeld)
+            return;
+
+        // Ball has been released or has just scored.
+        // It must obey normal physics.
+        if (inFlight || scoredThisShot)
+        {
+            ball.isKinematic = false;
+            ball.constraints = RigidbodyConstraints.None;
+            ball.useGravity = true;
+
+            return;
+        }
+
+        // Waiting for the next shot:
+        // keep the ball at its spawn position.
+        ball.isKinematic = false;
+        ball.constraints = RigidbodyConstraints.None;
+        ball.useGravity = false;
+
+        ball.linearVelocity = Vector3.zero;
+        ball.angularVelocity = Vector3.zero;
+
+        ball.position = spawnPoint.position;
+        ball.rotation = spawnPoint.rotation;
+    }
+
     private void UpdateScoreText()
     {
         if (scoreText != null)

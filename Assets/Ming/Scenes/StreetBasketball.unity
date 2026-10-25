@@ -585,7 +585,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503726, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_LocalRotation.w
@@ -937,7 +937,7 @@ Transform:
   m_GameObject: {fileID: 1873024623}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1, z: -2}
+  m_LocalPosition: {x: 0, y: 1.3, z: -2.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1146,7 +1146,7 @@ Transform:
   m_GameObject: {fileID: 3887399177757834563}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.1, z: -3}
+  m_LocalPosition: {x: 0, y: 1.3, z: -2.2}
   m_LocalScale: {x: 24, y: 24, z: 24}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1166,6 +1166,7 @@ GameObject:
   - component: {fileID: 3887399177757834566}
   - component: {fileID: 3887399177757834565}
   - component: {fileID: 3887399177757834564}
+  - component: {fileID: 3887399177757834567}
   m_Layer: 0
   m_Name: basketball
   m_TagString: Untagged
@@ -1266,8 +1267,10 @@ MonoBehaviour:
   m_Deactivated:
     m_PersistentCalls:
       m_Calls: []
-  m_StartingHoverFilters: []
-  m_StartingSelectFilters: []
+  m_StartingHoverFilters:
+  - {fileID: 3887399177757834567}
+  m_StartingSelectFilters:
+  - {fileID: 3887399177757834567}
   m_StartingInteractionStrengthFilters: []
   m_AutoFindParentInteractableInHierarchy: 0
   m_ParentInteractableObject: {fileID: 0}
@@ -1298,7 +1301,7 @@ MonoBehaviour:
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
   m_ThrowOnDetach: 1
-  m_ThrowSmoothingDuration: 0.1
+  m_ThrowSmoothingDuration: 0.08
   m_ThrowSmoothingCurve:
     serializedVersion: 2
     m_Curve:
@@ -1314,7 +1317,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  m_ThrowVelocityScale: 1
+  m_ThrowVelocityScale: 1.5
   m_ThrowAngularVelocityScale: 1
   m_ForceGravityOnDetach: 1
   m_UnparentTransformOnGrab: 1
@@ -1334,7 +1337,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3887399177757834563}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: a13754d4b7c25404d9da35d94bcf3d7b, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1375,6 +1378,20 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 2
+--- !u!114 &3887399177757834567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3887399177757834563}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7b43d8413f83144e85577c4607f667d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BasketballNearGrabFilter
+  maxGrabDistance: 0.15
+  basketballCollider: {fileID: 3887399177757834565}
 --- !u!4 &4874183100074378558
 Transform:
   m_ObjectHideFlags: 0
@@ -1384,10 +1401,11 @@ Transform:
   m_GameObject: {fileID: 5255493064290803588}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.1, z: 0}
+  m_LocalPosition: {x: 0, y: 2.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 8784798631435985434}
   - {fileID: 6829972711175688821}
   - {fileID: 1135557149}
   - {fileID: 12938451}
@@ -1471,7 +1489,6 @@ Transform:
   m_LocalScale: {x: 45, y: 45, z: 45}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8784798631435985434}
   - {fileID: 118256991}
   m_Father: {fileID: 4874183100074378558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1543,6 +1560,7 @@ GameObject:
   - component: {fileID: 6829972711175688821}
   - component: {fileID: 8944198135431417490}
   - component: {fileID: 5861498204615033572}
+  - component: {fileID: 8944198135431417491}
   m_Layer: 0
   m_Name: hoop
   m_TagString: Untagged
@@ -1576,12 +1594,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8161315305840431048}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.00014571786, y: 0.00001699388, z: -0.004336066}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
+  m_LocalPosition: {x: 0.0065573035, y: -0.19512296, z: -0.0007646978}
+  m_LocalScale: {x: 45, y: 45, z: 45}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6829972711175688821}
+  m_Father: {fileID: 4874183100074378558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8944198135431417490
 MeshFilter:
@@ -1590,6 +1608,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7661069093585580644}
+  m_Mesh: {fileID: -7047016320417709333, guid: 012338bd9443de740b89a2db07ad382b, type: 3}
+--- !u!64 &8944198135431417491
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7661069093585580644}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: -7047016320417709333, guid: 012338bd9443de740b89a2db07ad382b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
