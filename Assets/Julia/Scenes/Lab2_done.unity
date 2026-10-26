@@ -186,15 +186,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1511510219039382506, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -23.62
+      value: -26.1
       objectReference: {fileID: 0}
     - target: {fileID: 1511510219039382506, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.34
+      value: 0.77
       objectReference: {fileID: 0}
     - target: {fileID: 1511510219039382506, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 40.04
+      value: 39.6
       objectReference: {fileID: 0}
     - target: {fileID: 1511510219039382506, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
       propertyPath: m_LocalRotation.w
@@ -227,6 +227,14 @@ PrefabInstance:
     - target: {fileID: 2283929904246899024, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
       propertyPath: m_Name
       value: Backpack_Alex
+      objectReference: {fileID: 0}
+    - target: {fileID: 7960410358185987675, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0256
+      objectReference: {fileID: 0}
+    - target: {fileID: 7960410358185987675, guid: 9b28831d676a7294d8cb054f477b0a81, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.0011
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
