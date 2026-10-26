@@ -104,7 +104,8 @@ namespace Julia.Scripts
                     Debug.Log("Handshake ended", this);
             }
 
-            // NPC hand follows player controller
+            // NPC hand follows player position only.
+            // Preserve the IK target's existing rotation.
             if (_shaking)
             {
                 float t = 1f - Mathf.Exp(
@@ -114,12 +115,6 @@ namespace Julia.Scripts
                 ikTarget.position = Vector3.Lerp(
                     ikTarget.position,
                     playerHand.position,
-                    t
-                );
-
-                ikTarget.rotation = Quaternion.Slerp(
-                    ikTarget.rotation,
-                    playerHand.rotation,
                     t
                 );
             }
@@ -136,3 +131,4 @@ namespace Julia.Scripts
         }
     }
 }
+gi
