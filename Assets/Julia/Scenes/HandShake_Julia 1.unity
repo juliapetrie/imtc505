@@ -180,6 +180,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 704194d816109654093f3af0df34982d, type: 3}
+--- !u!1 &619821634
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 619821635}
+  m_Layer: 0
+  m_Name: NPCHandContact
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &619821635
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619821634}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1803191853}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &707420433 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3640874310523651506, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
@@ -222,6 +253,26 @@ MonoBehaviour:
   fingerCurlDegrees: 25
   thumbCurlDegrees: 10
   animateFingers: 1
+--- !u!114 &707420436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 707420433}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28c0fe62bd1398440a21f2e1f5ebfdc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandshakeGlow
+  handshakePoint: {fileID: 4060590884374146087}
+  glowColor: {r: 1, g: 0.8, b: 0.3, a: 1}
+  startingSize: 0.08
+  fullSize: 0.22
+  growTime: 1.5
+  fadeSpeed: 5
+  lightIntensity: 1.5
+  lightRange: 0.6
 --- !u!1 &1233763877 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7653617786282110433, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
@@ -240,7 +291,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VRHandGripPose
   gripAction:
-    m_UseReference: 0
+    m_UseReference: 1
     m_Action:
       m_Name: Grip
       m_Type: 0
@@ -251,7 +302,7 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
       m_Priority: 0
-    m_Reference: {fileID: 0}
+    m_Reference: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   controller: 5
   gripThreshold: 0.5
   poseSpeed: 8
@@ -266,7 +317,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1233763877}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88e6d34fb5362924eae9fa517abdcd1d, type: 3}
   m_Name: 
@@ -274,7 +325,7 @@ MonoBehaviour:
   playerHand: {fileID: 707420434}
   handshakePoint: {fileID: 4060590884374146087}
   gripAction:
-    m_UseReference: 0
+    m_UseReference: 1
     m_Action:
       m_Name: Grip
       m_Type: 0
@@ -285,7 +336,70 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
       m_Priority: 0
-    m_Reference: {fileID: 0}
+    m_Reference: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  controller: 5
+  startDistance: 0.5
+  releaseDistance: 0.7
+  gripThreshold: 0.5
+  blendSpeed: 4
+  followSpeed: 14
+  maxReachFraction: 0.95
+  handPositionOffset: {x: 0, y: 0, z: 0}
+  handRotationOffset: {x: 0, y: 0, z: 0}
+  followHandRotation: 0.35
+  elbowDirection: {x: 0.5, y: -0.4, z: -0.7}
+  elbowHintDistance: 0.35
+  haptics: 1
+  gripHapticAmplitude: 0.35
+  gripHapticDuration: 0.08
+--- !u!114 &1233763884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233763877}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28c0fe62bd1398440a21f2e1f5ebfdc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandshakeGlow
+  handshakePoint: {fileID: 4060590884374146087}
+  glowColor: {r: 1, g: 0.8, b: 0.3, a: 1}
+  startingSize: 0.08
+  fullSize: 0.22
+  growTime: 1.5
+  fadeSpeed: 5
+  lightIntensity: 1.5
+  lightRange: 0.6
+--- !u!114 &1233763885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233763877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f56c357104aebb4893ab4087bd5afe3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VRHandshakePalmLock
+  playerHand: {fileID: 707420434}
+  handshakePoint: {fileID: 4060590884374146087}
+  npcContactPoint: {fileID: 0}
+  gripAction:
+    m_UseReference: 1
+    m_Action:
+      m_Name: Grip
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: d8d7996a-9ebd-49a6-8fab-d54184d5aa42
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+      m_Priority: 0
+    m_Reference: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f, type: 3}
   controller: 5
   startDistance: 0.16
   releaseDistance: 0.28
@@ -295,7 +409,7 @@ MonoBehaviour:
   maxReachFraction: 0.95
   handPositionOffset: {x: 0, y: 0, z: 0}
   handRotationOffset: {x: 0, y: 0, z: 0}
-  followHandRotation: 0.35
+  followHandRotation: 1
   elbowDirection: {x: 0.5, y: -0.4, z: -0.7}
   elbowHintDistance: 0.35
   haptics: 1
@@ -428,6 +542,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!4 &1803191853 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2513244255664068637, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
+  m_PrefabInstance: {fileID: 6561422012592060295}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2790226257712033029
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -436,9 +555,37 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4165032825942957832, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: -0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 4165032825942957832, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 4165032825942957832, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 4165032825942957832, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5795999533746659379, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
       propertyPath: m_Name
       value: VR Setup
+      objectReference: {fileID: 0}
+    - target: {fileID: 7090971961949765882, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0198
+      objectReference: {fileID: 0}
+    - target: {fileID: 7090971961949765882, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7090971961949765882, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8064751773409596799, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -487,6 +634,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3640874310523651506, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 707420435}
+    - targetCorrespondingSourceObject: {fileID: 3640874310523651506, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 707420436}
   m_SourcePrefab: {fileID: 100100000, guid: b98df1111039c044e89350d82a08fd1a, type: 3}
 --- !u!4 &4060590884374146087 stripped
 Transform:
@@ -563,7 +713,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 2513244255664068637, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 619821635}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7653617786282110433, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
       insertIndex: -1
@@ -571,6 +724,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7653617786282110433, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1233763883}
+    - targetCorrespondingSourceObject: {fileID: 7653617786282110433, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1233763884}
+    - targetCorrespondingSourceObject: {fileID: 7653617786282110433, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1233763885}
   m_SourcePrefab: {fileID: 100100000, guid: 8d32ed12379d5e24d8bd8c44ebcbe4c6, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
