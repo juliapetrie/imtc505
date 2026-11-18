@@ -710,8 +710,8 @@ MonoBehaviour:
   snapSpeed: 16
   contactDistance: 0.08
   enableHaptics: 1
-  contactHapticStrength: 0.714
-  contactHapticDuration: 0.45
+  contactHapticStrength: 1
+  contactHapticDuration: 0.12
   releaseHapticStrength: 0.15
   releaseHapticDuration: 0.06
   showDebugLogs: 1
