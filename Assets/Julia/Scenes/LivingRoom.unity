@@ -720,8 +720,33 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2aa26a005a32156409ec9de03d322e03, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 964077160}
   m_SourcePrefab: {fileID: 100100000, guid: 2aa26a005a32156409ec9de03d322e03, type: 3}
+--- !u!1 &964077159 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 2aa26a005a32156409ec9de03d322e03, type: 3}
+  m_PrefabInstance: {fileID: 964077158}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &964077160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964077159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad1239262e5844b7b88aa57675058d25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  platterRpm: 33.33
+  demoBpm: 120
+  speakerTravel: 0.22
+  musicSource: {fileID: 0}
+  roomModel: {fileID: 333698925}
 --- !u!1 &1100861571
 GameObject:
   m_ObjectHideFlags: 0
