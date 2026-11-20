@@ -1,0 +1,4 @@
+newmtl RoofSlate
+Kd 0.13 0.16 0.24
+Ks 0.02 0.02 0.02
+Ns 12
