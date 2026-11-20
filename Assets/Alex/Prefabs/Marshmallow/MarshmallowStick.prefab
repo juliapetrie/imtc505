@@ -287,6 +287,7 @@ GameObject:
   - component: {fileID: 192098742056854158}
   - component: {fileID: 6927430915783343347}
   - component: {fileID: 3201636713087120881}
+  - component: {fileID: 3865098102337246704}
   m_Layer: 0
   m_Name: MarshmallowStick
   m_TagString: Untagged
@@ -441,7 +442,7 @@ MonoBehaviour:
   m_SmoothScale: 0
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
-  m_ThrowOnDetach: 1
+  m_ThrowOnDetach: 0
   m_ThrowSmoothingDuration: 0.25
   m_ThrowSmoothingCurve:
     serializedVersion: 2
@@ -493,7 +494,25 @@ MonoBehaviour:
   - {fileID: 0}
   disableWhileHeldRight:
   - {fileID: 0}
+  blockLocomotionWhileHeld: 1
   debugLog: 1
+--- !u!114 &3865098102337246704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6472980843252609339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76b2100ded9323447a8fafbcd5ff9145, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestWhenDropped
+  freezeAtStart: 1
+  cancelThrow: 1
+  restLinearSpeed: 0.05
+  restAngularSpeed: 0.5
+  restSeconds: 0.5
 --- !u!1 &6836449078382946747
 GameObject:
   m_ObjectHideFlags: 0
