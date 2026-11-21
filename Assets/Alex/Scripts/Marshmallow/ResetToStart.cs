@@ -14,6 +14,9 @@ public class ResetToStart : MonoBehaviour
     [Tooltip("The 'Visual' child that StickRoller spins. Its rotation is put back too. Optional.")]
     public Transform rollPivot;
 
+    [Tooltip("Also turn the marshmallow on the stick back to raw white.")]
+    public bool resetMarshmallowColour = true;
+
     Rigidbody rb;
     XRGrabInteractable grab;
     Vector3 startPos;
@@ -64,9 +67,30 @@ public class ResetToStart : MonoBehaviour
         transform.SetPositionAndRotation(startPos, startRot);
         if (rollPivot != null) { rollPivot.localPosition = pivotPos; rollPivot.localRotation = pivotRot; }
 
+        if (resetMarshmallowColour) ResetMarshmallows();
+
         // Stay put at the start (same behaviour as RestWhenDropped at the beginning of the scene).
         if (GetComponent<RestWhenDropped>() != null) rb.isKinematic = true;
 
         resetting = false;
+    }
+
+    // Resets cooking on a marshmallow that is a child of the stick, and on one held in a socket on the stick.
+    void ResetMarshmallows()
+    {
+        foreach (var m in GetComponentsInChildren<RoastableMarshmallow>(true))
+            m.ResetCooking();
+
+        foreach (var socket in GetComponentsInChildren<XRSocketInteractor>(true))
+        {
+            foreach (var held in socket.interactablesSelected)
+            {
+                if (held is Component c)
+                {
+                    var m = c.GetComponentInChildren<RoastableMarshmallow>();
+                    if (m != null) m.ResetCooking();
+                }
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 /// World-space instruction board. It is placed once in front of the XR camera
 /// when the scene starts, then remains at that world position (no head-following).
 /// </summary>
-public sealed class BasketballInstructionBoard : MonoBehaviour
+public sealed class MarshmallowInstructionBoard : MonoBehaviour
 {
     [Header("Board")]
     [SerializeField] private GameObject panel;
@@ -57,7 +57,7 @@ public sealed class BasketballInstructionBoard : MonoBehaviour
         else
         {
             Debug.LogWarning(
-                "[BasketballInstructionBoard] No camera found. Board keeps its scene position.",
+                "[MarshmallowInstructionBoard] No camera found. Board keeps its scene position.",
                 this);
         }
 
