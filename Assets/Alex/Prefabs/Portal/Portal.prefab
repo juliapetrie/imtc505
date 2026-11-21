@@ -34,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.001}
-  m_LocalScale: {x: 1.8286628, y: 2.519754, z: 0.0001}
+  m_LocalScale: {x: 1.7640013, y: 2.4306555, z: 0.000096464}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3287442153869770987}
@@ -218,6 +218,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PortalVisual
   othersideCubemap: {fileID: 0}
   cubemapProperty: OthersideCubemap
+  yawOffset: 0
+  followPortalYaw: 1
+  invertFollow: 0
+  rotationProperty: OthersideRotation
 --- !u!2083052967 &1672225869145651180
 VisualEffect:
   m_ObjectHideFlags: 0
@@ -308,7 +312,10 @@ VisualEffect:
   m_ReleaseInstanceOnDisable: 0
   m_PropertySheet:
     m_Float:
-      m_Array: []
+      m_Array:
+      - m_Value: 0
+        m_Name: OthersideRotation
+        m_Overridden: 1
     m_Vector2f:
       m_Array: []
     m_Vector3f:
@@ -390,3 +397,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PortalVisual
   othersideCubemap: {fileID: 0}
   cubemapProperty: OthersideCubemap
+  yawOffset: 0
+  followPortalYaw: 1
+  invertFollow: 0
+  rotationProperty: OthersideRotation
