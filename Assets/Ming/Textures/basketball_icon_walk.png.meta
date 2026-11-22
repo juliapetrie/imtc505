@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 6eae096c11c7dcb4dbb0756b2a1f7347
+guid: c3933ac0ecc44fe0a466261aff5cdd7d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3373023845835058664
-    second: basketball_icon_jump_0
+      213: 2955450726664196820
+    second: basketball_icon_walk_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -77,7 +77,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -115,7 +115,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: basketball_icon_jump_0
+      name: basketball_icon_walk_0
       rect:
         serializedVersion: 2
         x: 0
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8edabe511536fce20800000000000000
-      internalID: 3373023845835058664
+      spriteID: 4d25df9f6ced30920800000000000000
+      internalID: 2955450726664196820
       vertices: []
       indices: 
       edges: []
