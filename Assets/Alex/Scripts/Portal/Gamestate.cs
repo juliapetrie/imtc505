@@ -24,6 +24,14 @@ public static class GameState
     /// <summary>Fires after a memory is completed, with the new total.</summary>
     public static event Action<int> OnMemoryCompleted;
 
+    /// <summary>The memory finished most recently. Lets the campus play a closing animation once.</summary>
+    public static string LastCompletedMemoryId { get; private set; }
+
+    public static void ClearLastCompleted() => LastCompletedMemoryId = null;
+
+    /// <summary>The campus look the player has already seen (0 to TotalMemories). Used to blend from the old look to the new one.</summary>
+    public static int AppliedStage { get; set; }
+
     public static bool HasReturnPoint { get; private set; }
     public static Vector3 ReturnPosition { get; private set; }
     public static Quaternion ReturnRotation { get; private set; }
@@ -35,6 +43,7 @@ public static class GameState
         // Ignore blanks and repeats so revisiting a memory can't inflate the count.
         if (string.IsNullOrEmpty(memoryId) || !completedMemories.Add(memoryId)) return;
 
+        LastCompletedMemoryId = memoryId;
         Debug.Log($"Memory '{memoryId}' complete. Memories completed: {MemoriesCompleted}/{TotalMemories}");
         OnMemoryCompleted?.Invoke(MemoriesCompleted);
     }
@@ -50,6 +59,8 @@ public static class GameState
     public static void Reset()
     {
         completedMemories.Clear();
+        LastCompletedMemoryId = null;
+        AppliedStage = 0;
         HasReturnPoint = false;
     }
 }
