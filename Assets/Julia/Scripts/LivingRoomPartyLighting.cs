@@ -11,6 +11,8 @@ internal sealed class LivingRoomPartyLighting
     private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
     private readonly MeshRenderer[] segments = new MeshRenderer[SegmentCount];
     private readonly Light[] washes = new Light[4];
+    private readonly Color[] washColors = new Color[4];
+    private readonly Transform authoredFixtures;
     private readonly Light daylight;
     private readonly float oldDaylight;
     private readonly AmbientMode oldAmbientMode;
@@ -25,6 +27,7 @@ internal sealed class LivingRoomPartyLighting
 
     public LivingRoomPartyLighting(Transform room, Vector3 djPosition)
     {
+        authoredFixtures = room.Find("Party Light Fixtures");
         rig = new GameObject("Music Reactive Party Lights");
         rig.transform.SetParent(room, false);
 
@@ -88,6 +91,8 @@ internal sealed class LivingRoomPartyLighting
             position.y = 0.798f;
             washes[wall] = AddAccentLight("Colour Wash " + (wall + 1), position,
                 new Color(0.46f, 0.32f, 0.75f), 3.1f, 0.85f);
+            if (washes[wall] != null)
+                washColors[wall] = washes[wall].color;
         }
 
         AddAccentLight("Warm Seating Fill", new Vector3(-0.75f, 0.92f, 0.60f),
@@ -102,6 +107,12 @@ internal sealed class LivingRoomPartyLighting
 
     private Light AddAccentLight(string name, Vector3 position, Color colour, float range, float intensity)
     {
+        if (authoredFixtures != null)
+        {
+            Transform authored = authoredFixtures.Find(name);
+            return authored != null ? authored.GetComponent<Light>() : null;
+        }
+
         var fixture = new GameObject(name);
         fixture.transform.SetParent(rig.transform, false);
         fixture.transform.localPosition = position;
@@ -172,8 +183,10 @@ internal sealed class LivingRoomPartyLighting
 
         for (int i = 0; i < washes.Length; i++)
         {
+            if (washes[i] == null)
+                continue;
             float position = (i + 0.5f) / washes.Length;
-            washes[i].color = Color.Lerp(new Color(0.46f, 0.32f, 0.75f), Palette(position), 0.18f);
+            washes[i].color = Color.Lerp(washColors[i], Palette(position), 0.18f);
         }
     }
 
@@ -184,6 +197,11 @@ internal sealed class LivingRoomPartyLighting
         RenderSettings.ambientMode = oldAmbientMode;
         RenderSettings.ambientLight = oldAmbient;
         RenderSettings.reflectionIntensity = oldReflections;
+        for (int i = 0; i < washes.Length; i++)
+        {
+            if (washes[i] != null)
+                washes[i].color = washColors[i];
+        }
         Object.Destroy(rig);
         Object.Destroy(ledMaterial);
         foreach (GameObject ring in speakerRings)
@@ -192,7 +210,7 @@ internal sealed class LivingRoomPartyLighting
         Object.Destroy(ringMaterial);
     }
 
-    private Color Palette(float position)
+    internal Color Palette(float position)
     {
         float hue = 0.59f + 0.30f * (0.5f + 0.5f * Mathf.Sin((position - phase) * 2f * Mathf.PI));
         return Color.HSVToRGB(hue, 0.82f, 1f);

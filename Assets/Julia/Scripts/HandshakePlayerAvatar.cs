@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.Interactors.Visuals;
 
 [DefaultExecutionOrder(100)]
@@ -15,6 +16,9 @@ public sealed class HandshakePlayerAvatar : MonoBehaviour
     [SerializeField] float bodyScale = 0.43f;
     [SerializeField] float torsoBackOffset = 0.12f;
     [SerializeField] float eyeAboveHeadBone = 0.10f;
+
+    internal Transform LeftController => leftController;
+    internal Transform RightController => rightController;
     // Camera Y Offset is an absolute height in device mode and an adjustment
     // relative to this reference height when the headset supplies floor height.
     const float FloorTrackingReferenceHeight = 1.65f;
@@ -117,6 +121,15 @@ public sealed class HandshakePlayerAvatar : MonoBehaviour
         foreach (var renderer in rightHandRenderers)
             renderer.forceRenderingOff = true;
         fallbackLeft.SetActive(false);
+        AlignPokeTip(leftController, leftArm);
+        AlignPokeTip(rightController, rightArm);
+    }
+
+    static void AlignPokeTip(Transform controller, Arm arm)
+    {
+        var poke = controller.GetComponentInChildren<XRPokeInteractor>(true);
+        if (poke != null && arm.Tip != null)
+            poke.attachTransform = arm.Tip;
     }
 
     void HideLocomotionVisuals()
@@ -344,6 +357,7 @@ public sealed class HandshakePlayerAvatar : MonoBehaviour
         readonly Vector3 fingerCurlAxis;
         readonly Vector3 thumbSpreadAxis;
         readonly Transform fingertip;
+        public Transform Tip => fingertip ? fingertip : fingers;
         readonly Vector3 palmNormalLocal;
         Vector3 freePalmCenter;
         Vector3 freePalmNormal;

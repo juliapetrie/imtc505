@@ -1,4 +1,4 @@
-gitusing System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -107,6 +107,7 @@ internal sealed class LivingRoomGuests
 
     private readonly LivingRoomMixamo cast;
     private readonly Dictionary<Transform, PartyMotion> performances = new();
+    private readonly Dictionary<Transform, PartyFooting> footing = new();
     private float partyTime;
     private readonly List<Guest> guests = new List<Guest>();
     private readonly Dictionary<Transform, Wanderer> walkers = new();
@@ -114,6 +115,7 @@ internal sealed class LivingRoomGuests
     private NavMeshDataInstance navigationInstance;
     private readonly List<(Transform bone, Quaternion rotation)> animatedBones = new();
     private readonly Transform group;
+    private readonly bool ownsGroup;
     private readonly Transform room;
     private readonly Transform booth;
     private float greetingTime = 10f;
@@ -123,14 +125,20 @@ internal sealed class LivingRoomGuests
     private bool greeted;
 
     public LivingRoomGuests(Transform room, Transform booth, GameObject[] models,
-        RuntimeAnimatorController idleController, GameObject crowdModel, LivingRoomMixamo cast)
+        RuntimeAnimatorController idleController, GameObject crowdModel, LivingRoomMixamo cast, bool authoring = false)
     {
         this.room = room;
         this.booth = booth;
         this.cast = cast;
-        group = new GameObject("Living Room Guests").transform;
-        group.SetParent(room, false);
-        navigation = BuildRoomNavMesh(room.lossyScale.x);
+        group = room.Find("Living Room Guests");
+        ownsGroup = group == null;
+        if (ownsGroup)
+        {
+            group = new GameObject("Living Room Guests").transform;
+            group.SetParent(room, false);
+        }
+        if (!authoring)
+            navigation = BuildRoomNavMesh(room.lossyScale.x);
         if (navigation != null)
             navigationInstance = NavMesh.AddNavMeshData(navigation, room.position, room.rotation);
         if (models != null && models.Length > 0)
@@ -142,10 +150,24 @@ internal sealed class LivingRoomGuests
                 if (source == null)
                     continue;
 
-                Transform guest = CreateAnchor(i < RiggedSpots.Length ? RiggedSpots[i] : CrowdSpots[i - RiggedSpots.Length], i);
-                GameObject model = Object.Instantiate(source, guest, false);
-                model.transform.localPosition = Vector3.zero;
-                model.transform.localRotation = Quaternion.identity;
+                Transform guest = ownsGroup
+                    ? CreateAnchor(i < RiggedSpots.Length ? RiggedSpots[i] : CrowdSpots[i - RiggedSpots.Length], i)
+                    : group.Find("Party Guest " + (i + 1));
+                if (guest == null || (!ownsGroup && guest.childCount == 0))
+                    continue;
+
+                GameObject model;
+                if (ownsGroup)
+                {
+                    model = InstantiateGuestModel(source, guest, authoring);
+                    model.transform.localPosition = Vector3.zero;
+                    model.transform.localRotation = Quaternion.identity;
+                    FitModel(model.transform, (1.74f + (i % 3) * 0.035f) / room.lossyScale.y);
+                }
+                else
+                {
+                    model = guest.GetChild(0).gameObject;
+                }
                 Animator animator = model.GetComponentInChildren<Animator>();
                 if (animator == null)
                     animator = model.AddComponent<Animator>();
@@ -153,20 +175,34 @@ internal sealed class LivingRoomGuests
                     animator.avatar = referenceAnimator.avatar;
                 animator.runtimeAnimatorController = idleController;
                 animator.applyRootMotion = false;
-                FitModel(model.transform, 1.26f + (i % 3) * 0.055f);
+                if (authoring)
+                    continue;
+
                 var partyGuest = new Guest(guest, i, i == 1 || i == 2 || i == 3 || i == 4
                     || i == 5 || i == 6 || i == 7, i == 0 || i == 2);
                 guests.Add(partyGuest);
                 if (cast.Models != null)
+                {
                     performances.Add(guest, new PartyMotion(animator));
+                    footing.Add(guest, new PartyFooting(model.transform, animator));
+                }
                 if (navigationInstance.valid && partyGuest.animator != null &&
                     (i == 1 || i == 3 || i == 6 || i == 7))
                     AddWalker(partyGuest, i);
             }
         }
 
-        if (crowdModel != null && cast.Models == null)
+        if (crowdModel != null && cast.Models == null && ownsGroup && !authoring)
             AddCrowd(crowdModel);
+    }
+
+    internal static GameObject InstantiateGuestModel(GameObject source, Transform parent, bool authoring)
+    {
+#if UNITY_EDITOR
+        if (authoring)
+            return (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(source, parent);
+#endif
+        return Object.Instantiate(source, parent, false);
     }
 
     private static NavMeshData BuildRoomNavMesh(float roomScale)
@@ -422,12 +458,27 @@ internal sealed class LivingRoomGuests
         Bounds result = new Bounds(relativeTo.InverseTransformPoint(renderers[0].bounds.center), Vector3.zero);
         foreach (Renderer renderer in renderers)
         {
-            Bounds bounds = renderer.bounds;
+            Bounds bounds = renderer.localBounds;
+            if (renderer is SkinnedMeshRenderer skin && skin.sharedMesh != null)
+            {
+                // Imported skinned bounds include animation padding, which lifts the soles off the floor.
+                var posedMesh = new Mesh();
+                skin.BakeMesh(posedMesh);
+                if (posedMesh.vertexCount > 0)
+                    bounds = posedMesh.bounds;
+#if UNITY_EDITOR
+                if (!Application.isPlaying)
+                    Object.DestroyImmediate(posedMesh);
+                else
+#endif
+                    Object.Destroy(posedMesh);
+            }
             for (int corner = 0; corner < 8; corner++)
             {
                 var sign = new Vector3((corner & 1) == 0 ? -1f : 1f,
                     (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
-                result.Encapsulate(relativeTo.InverseTransformPoint(bounds.center + Vector3.Scale(bounds.extents, sign)));
+                Vector3 cornerPoint = bounds.center + Vector3.Scale(bounds.extents, sign);
+                result.Encapsulate(relativeTo.InverseTransformPoint(renderer.transform.TransformPoint(cornerPoint)));
             }
         }
         return result;
@@ -563,6 +614,8 @@ internal sealed class LivingRoomGuests
     {
         foreach (Guest guest in guests)
         {
+            if (footing.TryGetValue(guest.body, out PartyFooting feet))
+                feet.Apply();
             bool walking = walkers.TryGetValue(guest.body, out Wanderer walker) && walker.IsWalking;
             if (!performances.ContainsKey(guest.body) && guest.dances && guest.animator != null && !walking && !(guest.greets && greetingTime < 4.05f))
                 DancePose(guest);
@@ -671,7 +724,48 @@ internal sealed class LivingRoomGuests
             motion.Dispose();
         navigationInstance.Remove();
         Object.Destroy(navigation);
-        if (group != null)
+        if (ownsGroup && group != null)
             Object.Destroy(group.gameObject);
+    }
+}
+
+internal sealed class PartyFooting
+{
+    private readonly Transform model;
+    private readonly Transform leftFoot;
+    private readonly Transform rightFoot;
+    private readonly float restModelY;
+    private readonly float restFootY;
+
+    public PartyFooting(Transform model, Animator animator)
+    {
+        this.model = model;
+        if (animator == null || !animator.isHuman)
+            return;
+
+        leftFoot = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+        rightFoot = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+        if (leftFoot == null || rightFoot == null)
+            return;
+
+        restModelY = model.localPosition.y;
+        restFootY = FootHeight();
+    }
+
+    public void Apply()
+    {
+        if (leftFoot == null || rightFoot == null)
+            return;
+
+        Vector3 position = model.localPosition;
+        float poseHeight = FootHeight() - (position.y - restModelY);
+        position.y = restModelY + Mathf.Clamp(restFootY - poseHeight, -0.23f, 0.23f);
+        model.localPosition = position;
+    }
+
+    private float FootHeight()
+    {
+        return Mathf.Min(model.parent.InverseTransformPoint(leftFoot.position).y,
+            model.parent.InverseTransformPoint(rightFoot.position).y);
     }
 }

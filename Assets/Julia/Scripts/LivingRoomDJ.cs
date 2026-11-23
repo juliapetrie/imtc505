@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.XR;
+using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Readers;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 
 public sealed class LivingRoomDJ : MonoBehaviour
 {
@@ -13,6 +17,7 @@ public sealed class LivingRoomDJ : MonoBehaviour
     [SerializeField] private AudioSource musicSource;
     [Tooltip("Optional second track. Assign a separate AudioSource with a clip to unlock the crossfade step.")]
     [SerializeField] private AudioSource secondMusicSource;
+    [SerializeField] private AudioClip[] songChoices;
 
     [SerializeField] private Transform roomModel;
     [SerializeField] private MeshRenderer[] exteriorWindowPanes;
@@ -76,6 +81,151 @@ public sealed class LivingRoomDJ : MonoBehaviour
     private float forward;
     private float coneRestX;
 
+#if UNITY_EDITOR
+    [UnityEditor.MenuItem("Tools/Living Room/Normalize NPC Sizes")]
+    private static void NormalizeActiveSceneNpcs()
+    {
+        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (Application.isPlaying || scene.path != "Assets/Julia/Scenes/LivingRoom.unity")
+            return;
+
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            var dj = root.GetComponentInChildren<LivingRoomDJ>();
+            if (dj != null && dj.roomModel != null)
+            {
+                dj.NormalizeNpcSizes();
+                return;
+            }
+        }
+    }
+
+    private void NormalizeNpcSizes()
+    {
+        Transform standing = roomModel.Find("Living Room Guests");
+        if (standing == null)
+            return;
+
+        var guests = new List<(Transform model, Transform pivot, float size)>();
+        foreach (Transform guest in standing)
+            MeasureNpc(guest, false, guests);
+        if (guests.Count == 0)
+            return;
+
+        var sizes = new List<float>();
+        foreach (var guest in guests)
+            sizes.Add(guest.size);
+        sizes.Sort();
+        float typicalSize = sizes[sizes.Count / 2];
+
+        MeasureNpc(roomModel.Find("DJ Host"), false, guests);
+        Transform couchGuests = roomModel.Find("Couch Guests");
+        if (couchGuests != null)
+        {
+            foreach (Transform guest in couchGuests)
+                MeasureNpc(guest, true, guests);
+        }
+
+        foreach (var guest in guests)
+        {
+            float correction = typicalSize / guest.size;
+            // Preserve small differences between adult characters.
+            if (correction >= 0.94f && correction <= 1.06f)
+                continue;
+
+            Vector3 fixedPoint = guest.pivot.position;
+            UnityEditor.Undo.RecordObject(guest.model, "Normalize NPC size");
+            guest.model.localScale *= correction;
+            guest.model.position += fixedPoint - guest.pivot.position;
+            UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(guest.model);
+            Debug.Log($"Resized {guest.model.parent.name} by {correction:P0} of its previous scale.");
+        }
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+    }
+
+    private static void MeasureNpc(Transform guest, bool seated,
+        List<(Transform model, Transform pivot, float size)> guests)
+    {
+        if (guest == null || guest.childCount == 0)
+            return;
+
+        Transform model = guest.GetChild(0);
+        Animator animator = model.GetComponentInChildren<Animator>();
+        if (animator == null || !animator.isHuman)
+            return;
+
+        Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+        Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
+        Transform left = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+        Transform right = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+        if (hips == null || head == null || left == null || right == null)
+            return;
+
+        // Bone lengths stay consistent when the same rig sits, dances, or stands.
+        float size = BoneChainLength(head, hips)
+            + (BoneChainLength(left, hips) + BoneChainLength(right, hips)) * 0.5f;
+        Transform pivot = seated ? hips : (left.position.y < right.position.y ? left : right);
+        if (size > 0.1f)
+            guests.Add((model, pivot, size));
+    }
+
+    private static float BoneChainLength(Transform bone, Transform ancestor)
+    {
+        float length = 0f;
+        while (bone != null && bone != ancestor && bone.parent != null)
+        {
+            length += Vector3.Distance(bone.position, bone.parent.position);
+            bone = bone.parent;
+        }
+        return bone == ancestor ? length : 0f;
+    }
+
+    [UnityEditor.MenuItem("Tools/Living Room/Place NPCs in Scene")]
+    private static void PlaceActiveSceneNpcs()
+    {
+        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (scene.path != "Assets/Julia/Scenes/LivingRoom.unity")
+            return;
+
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            var dj = root.GetComponentInChildren<LivingRoomDJ>();
+            if (dj != null)
+            {
+                dj.PlaceNpcsInScene();
+                return;
+            }
+        }
+    }
+
+    [ContextMenu("Place NPCs in Scene")]
+    private void PlaceNpcsInScene()
+    {
+        if (Application.isPlaying || roomModel == null)
+            return;
+
+        var cast = new LivingRoomMixamo();
+        GameObject[] models = cast.Models ?? guestModels;
+        if (roomModel.Find("Living Room Guests") == null)
+        {
+            _ = new LivingRoomGuests(roomModel, transform, models, guestIdleController, crowdModel, cast, authoring: true);
+            UnityEditor.Undo.RegisterCreatedObjectUndo(roomModel.Find("Living Room Guests").gameObject, "Place standing guests");
+        }
+        if (roomModel.Find("Couch Guests") == null)
+        {
+            _ = new LivingRoomCouch(roomModel, guestModels, guestSittingClip, cast, authoring: true);
+            UnityEditor.Undo.RegisterCreatedObjectUndo(roomModel.Find("Couch Guests").gameObject, "Place couch guests");
+        }
+        if (roomModel.Find("DJ Host") == null)
+        {
+            GameObject model = models != null && models.Length > 0 ? models[0] : null;
+            Transform host = LivingRoomEntrance.CreateHost(roomModel, model, true);
+            UnityEditor.Undo.RegisterCreatedObjectUndo(host.gameObject, "Place DJ host");
+        }
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
+    }
+#endif
+
     private void Start()
     {
         deck = GetComponentInChildren<MeshFilter>();
@@ -119,7 +269,8 @@ public sealed class LivingRoomDJ : MonoBehaviour
         BuildSpeakers(unit);
         deckUnit = unit;
         BuildSoundDisplay();
-        challenge = new LivingRoomDJChallenge(deck.transform, unit, forward, platterCenter, musicSource, secondMusicSource);
+        challenge = new LivingRoomDJChallenge(deck.transform, unit, forward, platterCenter,
+            musicSource, secondMusicSource, songChoices);
         if (roomModel != null)
         {
             var cast = new LivingRoomMixamo();
@@ -240,7 +391,7 @@ public sealed class LivingRoomDJ : MonoBehaviour
         AnimateScreenDot(elapsed);
         AnimateWallPictures(elapsed);
         partyLighting?.Update(pulse, elapsed);
-        entrance?.Update(elapsed, partyLighting.Phase);
+        entrance?.Update(elapsed, partyLighting);
 
         foreach (RoomSpeaker speaker in roomSpeakers)
             speaker.Apply(speakerTravel * pulse);
@@ -645,15 +796,16 @@ public sealed class LivingRoomDJ : MonoBehaviour
 
     private float ReadPulse(float elapsed)
     {
-        if (musicSource != null)
+        AudioSource first = challenge?.FirstTrack ?? musicSource;
+        AudioSource second = challenge?.SecondTrack ?? secondMusicSource;
+        if (first != null)
         {
-            musicSource.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
-            if (secondMusicSource != null && secondMusicSource != musicSource && secondMusicSource.isPlaying)
+            first.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
+            if (second != null && second != first && second.isPlaying)
             {
-                secondMusicSource.GetSpectrumData(rightSpectrum, 0, FFTWindow.BlackmanHarris);
+                second.GetSpectrumData(rightSpectrum, 0, FFTWindow.BlackmanHarris);
                 for (int i = 0; i < spectrum.Length; i++)
-                    spectrum[i] = Mathf.Max(spectrum[i] * musicSource.volume,
-                        rightSpectrum[i] * secondMusicSource.volume);
+                    spectrum[i] = Mathf.Max(spectrum[i] * first.volume, rightSpectrum[i] * second.volume);
             }
         }
         else
@@ -740,32 +892,61 @@ public sealed class LivingRoomDJ : MonoBehaviour
 
 internal sealed class LivingRoomDJChallenge
 {
-    private enum Step { Start, Fader, Cue, Scratch, Crossfade, Complete }
+    private enum Step { PickSongs, Fader, Scratch, Crossfade, Complete }
 
-    private static readonly Color Ready = new Color(0.16f, 0.95f, 0.82f);
+    private static readonly Color Ready = new Color(1f, 0.22f, 0.66f);
     private static readonly Color Idle = new Color(0.17f, 0.21f, 0.35f);
     private readonly GameObject rig;
     private readonly Transform deck;
     private readonly float unit;
     private readonly float front;
     private readonly Camera camera;
+    private readonly ContinuousMoveProvider boothMovement;
+    private readonly XRInputValueReader<Vector2> originalRightMove;
+    private readonly float originalMoveSpeed;
+    private readonly bool originalMoveEnabled;
     private readonly AudioSource music;
     private readonly AudioSource secondTrack;
     private readonly float originalVolume;
     private readonly float originalSecondVolume;
     private readonly float originalPitch;
-    private readonly bool hasCrossfade;
+    private readonly AudioClip[] songs;
+    private readonly AudioClip originalClip;
+    private readonly AudioClip originalSecondClip;
+    private readonly bool originalLoop;
+    private readonly bool originalSecondLoop;
+    private readonly Renderer[] songButtons = new Renderer[2];
+    private readonly Text[] controlLabels = new Text[5];
+    private readonly BoxCollider[] menuButtonTargets = new BoxCollider[5];
+    private readonly int[] songSelection = { 0, 1 };
     private float turnPitch;
     private bool adjustingPitch;
-    private readonly TextMesh prompt;
+    private readonly Text prompt;
+    private readonly Text instructionTitle;
+    private readonly Text instructionAction;
+    private readonly Text navigationHint;
+    private readonly RectTransform djPopup;
+    private readonly RectTransform progressFill;
     private readonly Transform fader;
     private readonly Renderer faderRenderer;
     private readonly Renderer cueRenderer;
     private readonly Renderer scratchRenderer;
     private readonly Material activeMaterial;
     private readonly Material idleMaterial;
-    private readonly Collider[] targets = new Collider[3];
+    private readonly BoxCollider[] targets = new BoxCollider[5];
+    private const float ControllerReach = 0.115f;
+    private const float ScratchGoalDegrees = 45f;
+    private readonly Transform[] controllers = new Transform[2];
+    private readonly bool[] triggerPressed = new bool[2];
+    private readonly float[] triggerGrace = new float[2];
+    private readonly Renderer[] controlRenderers = new Renderer[5];
+    private readonly MaterialPropertyBlock controlGlow = new();
+    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+    private int triggerOwner = -1;
+    private int nearControl = -1;
+    private string actionHint;
     private readonly Vector3 faderStart;
+    private readonly Transform faderGuide;
     private readonly Vector3 platterCenter;
     private Step step;
     private int held = -1;
@@ -777,26 +958,69 @@ internal sealed class LivingRoomDJChallenge
     private float platterOffset;
 
     public float PlatterOffset => platterOffset;
+    public AudioSource FirstTrack => music;
+    public AudioSource SecondTrack => secondTrack;
 
-    public LivingRoomDJChallenge(Transform deck, float unit, float front, Vector3 platterCenter, AudioSource music, AudioSource secondTrack)
+    public LivingRoomDJChallenge(Transform deck, float unit, float front, Vector3 platterCenter,
+        AudioSource music, AudioSource secondTrack, AudioClip[] songChoices)
     {
         this.deck = deck;
         this.unit = unit;
         this.front = front;
         camera = Camera.main;
-        this.music = music;
-        originalVolume = music != null ? music.volume : 1f;
-        originalPitch = music != null ? music.pitch : 1f;
-        this.secondTrack = secondTrack;
-        hasCrossfade = music != null && music.clip != null && secondTrack != null
-            && secondTrack != music && secondTrack.clip != null;
-        if (hasCrossfade)
+        var origin = camera != null ? camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>() : null;
+        if (origin != null)
         {
-            originalSecondVolume = secondTrack.volume;
-            secondTrack.volume = 0f;
+            var avatar = origin.GetComponentInParent<HandshakePlayerAvatar>();
+            if (avatar != null)
+            {
+                controllers[0] = avatar.LeftController;
+                controllers[1] = avatar.RightController;
+            }
+            boothMovement = origin.GetComponentInChildren<ContinuousMoveProvider>();
+            if (boothMovement != null)
+            {
+                originalMoveEnabled = boothMovement.enabled;
+                originalMoveSpeed = boothMovement.moveSpeed;
+                originalRightMove = boothMovement.rightHandMoveInput;
+                boothMovement.enabled = false;
+                boothMovement.moveSpeed = 0.65f;
+                boothMovement.rightHandMoveInput = new XRInputValueReader<Vector2>(
+                    "Booth right stick", XRInputValueReader.InputSourceMode.Unused);
+            }
         }
         rig = new GameObject("DJ Booth Challenge");
         rig.transform.SetParent(deck, false);
+        this.music = music != null ? music : CreateDeckAudio("Track A");
+        this.secondTrack = secondTrack != null && secondTrack != music ? secondTrack : CreateDeckAudio("Track B");
+        originalVolume = this.music.volume;
+        originalPitch = this.music.pitch;
+        originalSecondVolume = this.secondTrack.volume;
+        originalClip = this.music.clip;
+        originalSecondClip = this.secondTrack.clip;
+        originalLoop = this.music.loop;
+        originalSecondLoop = this.secondTrack.loop;
+        var catalog = new List<AudioClip>();
+        foreach (AudioClip clip in songChoices ?? System.Array.Empty<AudioClip>())
+        {
+            if (clip != null && !catalog.Contains(clip))
+                catalog.Add(clip);
+        }
+        foreach (AudioClip clip in new[] { originalClip, originalSecondClip })
+        {
+            if (clip != null && !catalog.Contains(clip))
+                catalog.Add(clip);
+        }
+        if (catalog.Count < 2)
+            catalog.AddRange(Resources.LoadAll<AudioClip>("LivingRoomDJTracks"));
+        songs = catalog.ToArray();
+        if (originalClip == null && songs.Length > 0)
+        {
+            this.music.clip = songs[0];
+            this.music.loop = true;
+            this.music.volume = originalVolume * 0.45f;
+            this.music.Play();
+        }
 
         Shader shader = Shader.Find("Universal Render Pipeline/Lit");
         activeMaterial = new Material(shader) { color = Ready };
@@ -807,30 +1031,114 @@ internal sealed class LivingRoomDJChallenge
         faderStart = new Vector3(1.25f * front, 1.62f, -1.44f) * unit;
         fader = CreatePart("Fader Cap", faderStart, new Vector3(0.36f, 0.20f, 0.38f) * unit);
         faderRenderer = fader.GetComponent<Renderer>();
+        controlRenderers[0] = faderRenderer;
         AddTarget(0, "Fader Drag Area", faderStart - Vector3.right * (0.48f * unit * front),
             new Vector3(1.85f, 0.44f, 0.62f) * unit);
 
-        Vector3 pad = new Vector3(1.87f * front, 1.58f, 2.90f) * unit;
+        Vector3 pad = new Vector3(2.75f * front, 1.83f, 0f) * unit;
         cueRenderer = CreatePart("Cue Pad", pad, new Vector3(0.54f, 0.16f, 0.60f) * unit)
             .GetComponent<Renderer>();
+        controlRenderers[1] = cueRenderer;
         AddTarget(1, "Cue Pad Button", pad, new Vector3(0.78f, 0.40f, 0.82f) * unit);
+        controlLabels[0] = AddControlLabel("Fader Callout", faderStart / unit + Vector3.up * 0.75f);
+        controlLabels[1] = AddControlLabel("Cue Callout", pad / unit + Vector3.up * 0.70f);
+        AddMenuButtonTarget(1);
+        faderGuide = CreatePart("Fader Destination", faderStart - Vector3.right * (front * 0.80f * unit)
+            - Vector3.up * (0.095f * unit), new Vector3(0.24f, 0.025f, 0.46f) * unit);
+        faderGuide.GetComponent<Renderer>().sharedMaterial = activeMaterial;
+        for (int i = 0; i < songButtons.Length; i++)
+        {
+            string label = i == 0 ? "A" : "B";
+            Vector3 position = new Vector3(2.75f * front, 1.83f, i == 0 ? -2.45f : 2.45f) * unit;
+            Transform button = CreatePart("Track " + label, position, new Vector3(0.68f, 0.22f, 0.84f) * unit);
+            songButtons[i] = button.GetComponent<Renderer>();
+            controlRenderers[3 + i] = songButtons[i];
+            AddTarget(3 + i, "Choose Track " + label, position, new Vector3(0.85f, 0.45f, 1.05f) * unit);
+            controlLabels[3 + i] = AddControlLabel("Deck " + label + " Callout",
+                position / unit + Vector3.up * 0.52f);
+            controlLabels[3 + i].text = "CHANGE " + label;
+            AddMenuButtonTarget(3 + i);
+        }
 
         this.platterCenter = new Vector3(platterCenter.x, 1.88f * unit, -platterCenter.z);
         AddTarget(2, "Turntable Grab Area", this.platterCenter, new Vector3(3.70f, 0.40f, 3.70f) * unit);
         scratchRenderer = CreatePart("Turntable Cue", this.platterCenter + new Vector3(0f, 0f, -1.78f * unit),
             new Vector3(0.34f, 0.11f, 0.16f) * unit).GetComponent<Renderer>();
+        controlRenderers[2] = scratchRenderer;
+        controlLabels[2] = AddControlLabel("Record Callout", scratchRenderer.transform.localPosition / unit
+            + Vector3.up * 0.65f);
 
-        var panel = new GameObject("DJ Instructions");
-        panel.transform.SetParent(rig.transform, false);
-        panel.transform.localPosition = new Vector3(-1.60f * front, 4.15f, 0f) * unit;
-        panel.transform.localRotation = Quaternion.LookRotation(new Vector3(-front, -0.19f, 0f));
-        prompt = panel.AddComponent<TextMesh>();
-        prompt.anchor = TextAnchor.MiddleCenter;
-        prompt.alignment = TextAlignment.Center;
-        prompt.fontSize = 80;
-        prompt.characterSize = 0.039f * unit;
-        prompt.color = new Color(0.87f, 0.98f, 1f);
+        var panel = new LivingRoomBillboard(rig.transform, "DJ Instructions",
+            new Vector2(660, 320), unit * 0.01f, Ready);
+        djPopup = panel.Transform;
+        djPopup.localPosition = new Vector3(-1.60f * front, 7.70f, 0f) * unit;
+        panel.Transform.localRotation = Quaternion.LookRotation(new Vector3(-front, 0.10f, 0f));
+        instructionTitle = panel.AddText("Heading", new Rect(24, 20, 612, 47), 36, Ready, FontStyle.Bold);
+        prompt = panel.AddText("Goal", new Rect(32, 73, 596, 105), 32, Color.white);
+        var track = panel.AddPanel("Progress Track", new Rect(42, 187, 576, 10), Idle);
+        progressFill = LivingRoomBillboard.AddGraphic(track, "Progress Fill", Ready).rectTransform;
+        progressFill.anchorMin = Vector2.zero;
+        progressFill.anchorMax = Vector2.up;
+        progressFill.offsetMin = progressFill.offsetMax = Vector2.zero;
+        panel.AddPanel("Action Bar", new Rect(26, 211, 608, 55), Ready);
+        instructionAction = panel.AddText("Next Action", new Rect(39, 216, 582, 45), 30,
+            new Color(0.15f, 0.025f, 0.085f), FontStyle.Bold);
+        navigationHint = panel.AddText("Movement Hint", new Rect(25, 275, 610, 30), 23,
+            new Color(0.79f, 0.78f, 0.86f));
         ShowStep();
+    }
+
+    private Text AddControlLabel(string label, Vector3 position)
+    {
+        var tag = new LivingRoomBillboard(rig.transform, label, new Vector2(240, 62), unit * 0.0068f, Ready);
+        tag.Transform.localPosition = position * unit;
+        tag.Transform.localRotation = Quaternion.LookRotation(new Vector3(-front, -0.55f, 0f));
+        return tag.AddText("Control", new Rect(10, 6, 220, 50), 32, Color.white, FontStyle.Bold);
+    }
+
+    private void AddMenuButtonTarget(int index)
+    {
+        var face = (RectTransform)controlLabels[index].rectTransform.parent.parent;
+        face.gameObject.SetActive(false);
+        var collider = face.gameObject.AddComponent<BoxCollider>();
+        collider.size = new Vector3(face.rect.width, face.rect.height, 8f);
+        menuButtonTargets[index] = collider;
+
+        // The starter rig's poke interactor queries solid colliders on the Default layer.
+        var button = face.gameObject.AddComponent<XRSimpleInteractable>();
+        button.colliders.Add(collider);
+        button.colliders.Add(targets[index]);
+        button.hoverFilters.Add(new XRHoverFilterDelegate((hand, _) => hand is XRPokeInteractor));
+        button.selectFilters.Add(new XRSelectFilterDelegate((hand, _) => hand is XRPokeInteractor));
+        face.gameObject.AddComponent<XRPokeFilter>();
+        var background = face.Find("Background").GetComponent<Image>();
+        Color restingColor = background.color;
+        button.lastHoverExited.AddListener(_ => background.color = restingColor);
+        button.firstHoverEntered.AddListener(args =>
+        {
+            if (held >= 0 || !Expects(index))
+                return;
+            background.color = new Color(0.48f, 0.045f, 0.25f);
+            var poke = (XRPokeInteractor)args.interactorObject;
+            var node = controllers[0] != null && poke.transform.IsChildOf(controllers[0])
+                ? XRNode.LeftHand : XRNode.RightHand;
+            InputDevices.GetDeviceAtXRNode(node).SendHapticImpulse(0u, 0.30f, 0.055f);
+            Begin(index, Vector3.zero);
+        });
+        face.gameObject.SetActive(true);
+    }
+
+    private AudioSource CreateDeckAudio(string name)
+    {
+        var channel = new GameObject(name);
+        channel.transform.SetParent(rig.transform, false);
+        var source = channel.AddComponent<AudioSource>();
+        source.playOnAwake = false;
+        source.spatialBlend = 1f;
+        source.rolloffMode = AudioRolloffMode.Linear;
+        source.minDistance = 2.5f;
+        source.maxDistance = 15f;
+        return source;
     }
 
     private Transform CreatePart(string name, Vector3 center, Vector3 scale)
@@ -852,12 +1160,14 @@ internal sealed class LivingRoomDJChallenge
         target.transform.SetParent(rig.transform, false);
         target.transform.localPosition = position;
         var collider = target.AddComponent<BoxCollider>();
-        collider.size = size;
+        collider.size = size + Vector3.one * (0.32f * unit);
         targets[index] = collider;
+        if (index == 1 || index >= 3)
+            return;
         var xr = target.AddComponent<XRSimpleInteractable>();
         xr.selectEntered.AddListener(args =>
         {
-            if (held >= 0 || !Expects(index))
+            if (held >= 0 || !Expects(index) || !LivingRoomEntrance.IsHandGrab(args.interactorObject, collider))
                 return;
             interactor = args.interactorObject;
             interactable = xr;
@@ -872,9 +1182,14 @@ internal sealed class LivingRoomDJChallenge
 
     private bool Expects(int index)
     {
+        if (songs.Length < 2)
+            return false;
+
         return step switch
         {
+            Step.PickSongs => index == 1 || index >= 3,
             Step.Fader or Step.Crossfade => index == 0,
+            Step.Complete => index <= 2,
             Step.Scratch => index == 2,
             _ => index == 1
         };
@@ -882,25 +1197,42 @@ internal sealed class LivingRoomDJChallenge
 
     private void Begin(int index, Vector3 point)
     {
+        if (step == Step.PickSongs && index >= 3)
+        {
+            int slot = index - 3;
+            int next = (songSelection[slot] + 1) % songs.Length;
+            if (next == songSelection[1 - slot])
+            {
+                if (songs.Length == 2)
+                    songSelection[1 - slot] = songSelection[slot];
+                else
+                    next = (next + 1) % songs.Length;
+            }
+            songSelection[slot] = next;
+            Release();
+            ShowStep();
+            return;
+        }
         if (index == 1)
         {
-            if (step == Step.Cue && music != null && music.clip != null && !music.isPlaying)
-                music.Play();
-
-            step = step == Step.Cue ? Step.Scratch : Step.Fader;
-            if (step == Step.Fader)
+            if (step == Step.Complete)
             {
-                faderTravel = 0f;
-                if (hasCrossfade)
-                {
-                    secondTrack.Stop();
-                    secondTrack.volume = 0f;
-                }
-                SetMusicLevel();
-                scratchTravel = 0f;
-                platterOffset = 0f;
-                fader.localPosition = faderStart;
+                Advance(Step.PickSongs);
+                return;
             }
+            step = Step.Fader;
+            faderTravel = 0f;
+            music.Stop();
+            secondTrack.Stop();
+            music.clip = songs[songSelection[0]];
+            secondTrack.clip = songs[songSelection[1]];
+            music.loop = secondTrack.loop = true;
+            secondTrack.volume = 0f;
+            SetMusicLevel();
+            music.Play();
+            scratchTravel = 0f;
+            platterOffset = 0f;
+            fader.localPosition = faderStart;
             Release();
             ShowStep();
             return;
@@ -912,6 +1244,18 @@ internal sealed class LivingRoomDJChallenge
 
     public void Update()
     {
+        if (boothMovement != null && camera != null)
+        {
+            Vector3 offset = camera.transform.position - deck.position;
+            offset.y = 0f;
+            boothMovement.enabled = held < 0 && offset.sqrMagnitude < 2.25f;
+            navigationHint.text = held >= 0 ? "Release to move" : boothMovement.enabled
+                ? "Left stick: move around the booth" : "Teleport closer to the booth";
+        }
+        else
+        {
+            navigationHint.text = "Teleport to the front edge of the booth";
+        }
         if (music != null && adjustingPitch)
         {
             float target = originalPitch * (1f + turnPitch);
@@ -924,72 +1268,160 @@ internal sealed class LivingRoomDJChallenge
         }
         turnPitch = 0f;
 
+        UpdateControllerTriggers();
         if (interactor != null && held >= 0)
-        {
             Drag(XRPoint());
-            return;
-        }
+        UpdateInteractionFeedback();
+    }
 
-        Mouse mouse = Mouse.current;
-        if (mouse == null || camera == null)
-            return;
-        Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
-        if (mouse.leftButton.wasPressedThisFrame && held < 0)
+    private void UpdateControllerTriggers()
+    {
+        float bestDistance = ControllerReach * ControllerReach;
+        nearControl = -1;
+        targets[0].transform.localPosition = fader.localPosition;
+        for (int hand = 0; hand < controllers.Length; hand++)
         {
-            for (int i = 0; i < targets.Length; i++)
+            XRNode node = hand == 0 ? XRNode.LeftHand : XRNode.RightHand;
+            InputDevice device = InputDevices.GetDeviceAtXRNode(node);
+            bool tracked = device.isValid && controllers[hand] != null
+                && (!device.TryGetFeatureValue(CommonUsages.isTracked, out bool isTracked) || isTracked);
+            float trigger = 0f;
+            if (tracked)
+                device.TryGetFeatureValue(CommonUsages.trigger, out trigger);
+            bool pressed = trigger >= (triggerPressed[hand] ? 0.36f : 0.60f);
+            bool started = pressed && !triggerPressed[hand];
+            triggerPressed[hand] = pressed;
+            triggerGrace[hand] = started ? 0.15f : pressed
+                ? Mathf.Max(0f, triggerGrace[hand] - Time.unscaledDeltaTime) : 0f;
+
+            if (triggerOwner == hand)
             {
-                if (Expects(i) && targets[i].Raycast(ray, out RaycastHit hit, 4f))
-                {
-                    Begin(i, Project(ray, deck.InverseTransformPoint(hit.point)));
-                    break;
-                }
+                if (pressed)
+                    Drag(deck.InverseTransformPoint(controllers[hand].position));
+                else
+                    Release();
+                continue;
+            }
+
+            if (!tracked || held >= 0)
+                continue;
+
+            Vector3 point = controllers[hand].position;
+            int target = ClosestControl(point, out float distance);
+            if (target < 0)
+                continue;
+            if (distance < bestDistance)
+            {
+                nearControl = target;
+                bestDistance = distance;
+            }
+
+            if (triggerGrace[hand] > 0f)
+            {
+                triggerGrace[hand] = 0f;
+                Begin(target, deck.InverseTransformPoint(point));
+                if (held >= 0)
+                    triggerOwner = hand;
+                device.SendHapticImpulse(0u, 0.30f, 0.055f);
             }
         }
-        if (held >= 0 && mouse.leftButton.isPressed)
-            Drag(Project(ray, lastPoint));
-        if (mouse.leftButton.wasReleasedThisFrame)
-            Release();
+    }
+
+    private int ClosestControl(Vector3 point, out float distance)
+    {
+        distance = ControllerReach * ControllerReach;
+        int nearest = -1;
+        for (int i = 0; i < targets.Length; i++)
+        {
+            if (!targets[i].enabled || menuButtonTargets[i] != null)
+                continue;
+            float gap = DistanceToControl(targets[i], point);
+            if (gap >= distance)
+                continue;
+            distance = gap;
+            nearest = i;
+        }
+        return nearest;
+    }
+
+    private static float DistanceToControl(BoxCollider target, Vector3 point)
+    {
+        return (target.ClosestPoint(point) - point).sqrMagnitude;
+    }
+
+    private void UpdateInteractionFeedback()
+    {
+        if (camera != null)
+        {
+            Vector3 head = camera.transform.position;
+            Vector3 facing = djPopup.position - head;
+            if (facing.sqrMagnitude > 0.01f)
+                djPopup.rotation = Quaternion.LookRotation(facing, Vector3.up);
+            djPopup.gameObject.SetActive((djPopup.position - head).sqrMagnitude > 0.38f * 0.38f);
+        }
+
+        float progress = step switch
+        {
+            Step.Fader or Step.Crossfade or Step.Complete => Mathf.Clamp01(faderTravel / (unit * 0.80f)),
+            Step.Scratch => Mathf.Clamp01(scratchTravel / ScratchGoalDegrees),
+            _ => 0f
+        };
+        progressFill.anchorMax = new Vector2(progress, 1f);
+
+        int highlighted = held >= 0 ? held : nearControl;
+        for (int i = 0; i < controlRenderers.Length; i++)
+        {
+            controlGlow.SetColor(EmissionColor, Ready * (i == highlighted ? 0.92f : 0.38f));
+            controlRenderers[i].SetPropertyBlock(Expects(i) ? controlGlow : null);
+        }
+
+        if (held == 0)
+        {
+            int percent = Mathf.RoundToInt(progress * 100f);
+            SetActionText(step is Step.Crossfade or Step.Complete ? $"A {100 - percent}%    B {percent}%"
+                : $"LEVEL {percent}%");
+        }
+        else if (held == 2)
+        {
+            SetActionText(step == Step.Complete ? "SCRATCHING" : $"SCRATCH {Mathf.Min(100, Mathf.RoundToInt(scratchTravel / ScratchGoalDegrees * 100f))}%");
+        }
+        else
+        {
+            SetActionText(nearControl == 0 ? "SLIDER IN REACH: HOLD + PUSH"
+                : nearControl == 2 ? "RECORD IN REACH: HOLD + TURN"
+                : actionHint);
+        }
+    }
+
+    private void SetActionText(string value)
+    {
+        instructionAction.text = value;
     }
 
     private Vector3 XRPoint()
     {
-        Transform attach = interactor.GetAttachTransform(interactable);
-        Vector3 fallback = deck.InverseTransformPoint(attach.position);
-        if (interactor is XRRayInteractor rayInteractor && rayInteractor.rayOriginTransform != null)
-        {
-            Transform origin = rayInteractor.rayOriginTransform;
-            return Project(new Ray(origin.position, origin.forward), fallback);
-        }
-        return fallback;
-    }
-
-    private Vector3 Project(Ray ray, Vector3 fallback)
-    {
-        var plane = new Plane(deck.up, deck.TransformPoint(Vector3.up * (1.88f * unit)));
-        return plane.Raycast(ray, out float distance)
-            ? deck.InverseTransformPoint(ray.GetPoint(distance))
-            : fallback;
+        return deck.InverseTransformPoint(interactor.GetAttachTransform(interactable).position);
     }
 
     private void Drag(Vector3 point)
     {
         if (held == 0)
         {
-            faderTravel = Mathf.Clamp(faderTravel - (point.x - lastPoint.x) * front, 0f, unit);
+            faderTravel = Mathf.Clamp(faderTravel - (point.x - lastPoint.x) * front * 1.25f, 0f, unit);
             fader.localPosition = faderStart - Vector3.right * (faderTravel * front);
-            if (step == Step.Crossfade)
+            if (step is Step.Crossfade or Step.Complete)
             {
                 float blend = Mathf.Clamp01(faderTravel / (unit * 0.80f));
                 music.volume = originalVolume * (1f - blend);
                 secondTrack.volume = originalSecondVolume * blend;
-                if (blend >= 1f)
+                if (blend >= 1f && step == Step.Crossfade)
                     Advance(Step.Complete);
             }
             else
             {
                 SetMusicLevel();
                 if (faderTravel >= unit * 0.80f)
-                    Advance(Step.Cue);
+                    Advance(Step.Scratch);
             }
         }
         else
@@ -998,12 +1430,12 @@ internal sealed class LivingRoomDJChallenge
             Vector3 to = Vector3.ProjectOnPlane(point - platterCenter, Vector3.up);
             if (from.sqrMagnitude > 0.06f * unit * unit && to.sqrMagnitude > 0.06f * unit * unit)
             {
-                float delta = Vector3.SignedAngle(from, to, Vector3.up);
+                float delta = Mathf.Clamp(Vector3.SignedAngle(from, to, Vector3.up), -20f, 20f);
                 platterOffset = Mathf.Repeat(platterOffset + delta, 360f);
-                scratchTravel += delta;
+                scratchTravel += Mathf.Abs(delta);
                 adjustingPitch = true;
                 turnPitch = Mathf.Clamp(delta / Mathf.Max(Time.deltaTime, 0.005f) / 360f, -0.42f, 0.42f);
-                if (Mathf.Abs(scratchTravel) >= 65f)
+                if (scratchTravel >= ScratchGoalDegrees && step == Step.Scratch)
                     FinishScratch();
             }
         }
@@ -1012,12 +1444,6 @@ internal sealed class LivingRoomDJChallenge
 
     private void FinishScratch()
     {
-        if (!hasCrossfade)
-        {
-            Advance(Step.Complete);
-            return;
-        }
-
         faderTravel = 0f;
         fader.localPosition = faderStart;
         secondTrack.Play();
@@ -1034,6 +1460,7 @@ internal sealed class LivingRoomDJChallenge
     private void Release()
     {
         held = -1;
+        triggerOwner = -1;
         interactor = null;
         interactable = null;
     }
@@ -1041,18 +1468,46 @@ internal sealed class LivingRoomDJChallenge
     private void ShowStep()
     {
         faderRenderer.sharedMaterial = Expects(0) ? activeMaterial : idleMaterial;
-        int total = hasCrossfade ? 4 : 3;
-        cueRenderer.sharedMaterial = Expects(1) ? activeMaterial : idleMaterial;
-        scratchRenderer.sharedMaterial = step == Step.Scratch ? activeMaterial : idleMaterial;
-        prompt.text = step switch
+        foreach (Renderer button in songButtons)
+            button.gameObject.SetActive(step == Step.PickSongs && songs.Length >= 2);
+        for (int i = 0; i < targets.Length; i++)
         {
-            Step.Start => "DJ CHALLENGE\nSelect the lit pad to start",
-            Step.Fader => $"1 / {total}  SET THE LEVEL\nHold the lit fader and push it away",
-            Step.Cue => $"2 / {total}  CUE THE TRACK\nSelect the lit pad",
-            Step.Scratch => $"3 / {total}  SCRATCH THE RECORD\nHold the marked deck and turn it",
-            Step.Crossfade => "4 / 4  BLEND INTO TRACK 2\nPush the lit fader all the way forward",
-            _ => "MIX COMPLETE\nSelect the lit pad to replay"
+            bool available = Expects(i);
+            targets[i].enabled = available;
+            controlLabels[i].rectTransform.parent.parent.gameObject.SetActive(available);
+        }
+        controlLabels[0].text = step == Step.Fader ? "VOLUME SLIDER" : "CROSSFADER";
+        controlLabels[1].text = step == Step.Complete ? "NEW MIX" : "START MIX";
+        controlLabels[2].text = "SCRATCH HERE";
+        faderGuide.gameObject.SetActive(step is Step.Fader or Step.Crossfade);
+        foreach (Renderer button in songButtons)
+            button.sharedMaterial = activeMaterial;
+        cueRenderer.sharedMaterial = Expects(1) ? activeMaterial : idleMaterial;
+        scratchRenderer.sharedMaterial = Expects(2) ? activeMaterial : idleMaterial;
+        (string heading, string goal, string action) = songs.Length < 2
+            ? ("DJ BOOTH", "Two tracks are needed to start a mix.", "TRACKS UNAVAILABLE")
+            : step switch
+        {
+            Step.PickSongs => ("START YOUR MIX",
+                $"A  {TrackLabel(0)}\nB  {TrackLabel(1)}\nTouch CHANGE A or CHANGE B to switch tracks.", "TOUCH START MIX"),
+            Step.Fader => ("1 / 3   VOLUME SLIDER", "Hold the index trigger at the slider.\nPush it away to the pink marker.",
+                "HOLD TRIGGER + PUSH AWAY"),
+            Step.Scratch => ("2 / 3   SCRATCH THE RECORD", "Reach to SCRATCH HERE on the record.\nHold the index trigger and turn it.",
+                "HOLD TRIGGER + TURN"),
+            Step.Crossfade => ("3 / 3   CROSSFADER", $"Hold the trigger at the slider.\nPush to the pink marker to mix in B.",
+                "HOLD TRIGGER + PUSH AWAY"),
+            _ => ("FREE MIX", "Keep blending or scratch the record.\nTouch NEW MIX to choose new tracks.", "CROSSFADER  /  SCRATCH  /  NEW MIX")
         };
+        instructionTitle.text = heading;
+        prompt.text = goal;
+        actionHint = action;
+        SetActionText(action);
+    }
+
+    private string TrackLabel(int slot)
+    {
+        string title = songs[songSelection[slot]].name;
+        return title.Length > 24 ? title.Substring(0, 23) + "..." : title;
     }
 
     private void SetMusicLevel()
@@ -1063,18 +1518,102 @@ internal sealed class LivingRoomDJChallenge
 
     public void Dispose()
     {
+        if (boothMovement != null)
+        {
+            boothMovement.enabled = false;
+            boothMovement.rightHandMoveInput = originalRightMove;
+            boothMovement.moveSpeed = originalMoveSpeed;
+            boothMovement.enabled = originalMoveEnabled;
+        }
         if (music != null)
         {
+            music.Stop();
+            music.clip = originalClip;
+            music.loop = originalLoop;
             music.volume = originalVolume;
             music.pitch = originalPitch;
         }
-        if (hasCrossfade && secondTrack != null)
+        if (secondTrack != null)
         {
             secondTrack.Stop();
+            secondTrack.clip = originalSecondClip;
+            secondTrack.loop = originalSecondLoop;
             secondTrack.volume = originalSecondVolume;
         }
         UnityEngine.Object.Destroy(rig);
         UnityEngine.Object.Destroy(activeMaterial);
         UnityEngine.Object.Destroy(idleMaterial);
+    }
+}
+
+
+internal sealed class LivingRoomBillboard
+{
+    private readonly Vector2 size;
+    private readonly RectTransform content;
+
+    internal RectTransform Transform { get; }
+
+    internal LivingRoomBillboard(UnityEngine.Transform parent, string name, Vector2 size, float scale, Color accent)
+    {
+        this.size = size;
+        var canvas = new GameObject(name, typeof(RectTransform), typeof(Canvas)).GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        Transform = canvas.GetComponent<RectTransform>();
+        Transform.SetParent(parent, false);
+        Transform.sizeDelta = size;
+        Transform.localScale = Vector3.one * scale;
+        AddGraphic(Transform, "Frame", accent).rectTransform.sizeDelta = size;
+
+        var background = AddGraphic(Transform, "Background", new Color(0.027f, 0.035f, 0.048f));
+        content = background.rectTransform;
+        content.anchorMin = Vector2.zero;
+        content.anchorMax = Vector2.one;
+        content.offsetMin = new Vector2(5, 5);
+        content.offsetMax = new Vector2(-5, -5);
+        background.gameObject.AddComponent<RectMask2D>();
+    }
+
+    internal RectTransform AddPanel(string name, Rect bounds, Color color)
+    {
+        RectTransform rect = AddGraphic(content, name, color).rectTransform;
+        Place(rect, bounds);
+        return rect;
+    }
+
+    internal Text AddText(string name, Rect bounds, int fontSize, Color color, FontStyle style = FontStyle.Normal)
+    {
+        var text = new GameObject(name, typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+        text.rectTransform.SetParent(content, false);
+        Place(text.rectTransform, bounds);
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.fontSize = fontSize;
+        text.fontStyle = style;
+        text.color = color;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = Mathf.Max(14, fontSize - 15);
+        text.resizeTextMaxSize = fontSize;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    internal static Image AddGraphic(UnityEngine.Transform parent, string name, Color color)
+    {
+        var image = new GameObject(name, typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+        image.rectTransform.SetParent(parent, false);
+        image.color = color;
+        image.raycastTarget = false;
+        return image;
+    }
+
+    private void Place(RectTransform rect, Rect bounds)
+    {
+        // Convert the panel's reference-pixel coordinates to anchors in the masked background.
+        rect.anchorMin = new Vector2(bounds.xMin / size.x, 1f - bounds.yMax / size.y);
+        rect.anchorMax = new Vector2(bounds.xMax / size.x, 1f - bounds.yMin / size.y);
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
     }
 }

@@ -5,6 +5,8 @@ using Object = UnityEngine.Object;
 internal sealed class LivingRoomCouch
 {
     private readonly GameObject group;
+    private readonly Transform guestGroup;
+    private readonly bool ownsGuests;
     private readonly Material bowlMaterial;
     private readonly Material popcornMaterial;
     private readonly Transform[] heads = new Transform[2];
@@ -17,10 +19,20 @@ internal sealed class LivingRoomCouch
     private readonly Vector3[] seatPoints = new Vector3[2];
     private float time;
 
-    public LivingRoomCouch(Transform room, GameObject[] models, AnimationClip sitting, LivingRoomMixamo cast)
+    public LivingRoomCouch(Transform room, GameObject[] models, AnimationClip sitting, LivingRoomMixamo cast, bool authoring = false)
     {
-        group = new GameObject("Couch Guests and Popcorn");
-        group.transform.SetParent(room, false);
+        guestGroup = room.Find("Couch Guests");
+        ownsGuests = guestGroup == null;
+        if (ownsGuests)
+        {
+            guestGroup = new GameObject("Couch Guests").transform;
+            guestGroup.SetParent(room, false);
+        }
+        if (!authoring)
+        {
+            group = new GameObject("Couch Popcorn");
+            group.transform.SetParent(room, false);
+        }
         if (sitting == null || models == null || models.Length < 2)
         {
             Debug.LogWarning("Couch guests need two character models and a sitting clip.", group);
@@ -29,9 +41,11 @@ internal sealed class LivingRoomCouch
 
         bool useMixamo = cast.Models != null && cast.Sit != null;
         CreateGuest(useMixamo ? cast.SeatedModel ?? cast.Models[0] : models[0],
-            useMixamo ? cast.Sit : sitting, 0, 0.29f, useMixamo);
+            useMixamo ? cast.Sit : sitting, 0, 0.29f, useMixamo, authoring);
         CreateGuest(useMixamo ? cast.Models[Mathf.Min(1, cast.Models.Length - 1)] : models[1],
-            useMixamo ? cast.Sit : sitting, 1, 0.91f, useMixamo);
+            useMixamo ? cast.Sit : sitting, 1, 0.91f, useMixamo, authoring);
+        if (authoring)
+            return;
 
         Shader shader = Shader.Find("Universal Render Pipeline/Lit");
         bowlMaterial = new Material(shader) { color = new Color(0.64f, 0.13f, 0.26f) };
@@ -50,24 +64,53 @@ internal sealed class LivingRoomCouch
         }
     }
 
-    private void CreateGuest(GameObject source, AnimationClip sitting, int index, float z, bool useMixamo)
+    private void CreateGuest(GameObject source, AnimationClip sitting, int index, float z, bool useMixamo, bool authoring)
     {
         if (source == null)
             return;
 
-        Transform seat = new GameObject("Seated Guest " + (index + 1)).transform;
+        string label = "Seated Guest " + (index + 1);
+        Transform seat = ownsGuests ? new GameObject(label).transform : guestGroup.Find(label);
+        if (seat == null || (!ownsGuests && seat.childCount == 0))
+            return;
+
+        GameObject figure;
+        if (ownsGuests)
+        {
+            seat.SetParent(guestGroup, false);
+            seat.localPosition = new Vector3(-1.035f, -0.105f, z);
+            seat.localRotation = Quaternion.Euler(0f, index == 0 ? 74f : 106f, 0f);
+            figure = LivingRoomGuests.InstantiateGuestModel(source, seat, authoring);
+            figure.transform.localPosition = Vector3.zero;
+            figure.transform.localRotation = Quaternion.identity;
+            LivingRoomGuests.FitModel(figure.transform, 1.30f);
+        }
+        else
+        {
+            figure = seat.GetChild(0).gameObject;
+        }
+
         seats[index] = seat;
-        seat.SetParent(group.transform, false);
-        Vector3 hipPosition = new Vector3(-1.035f, -0.105f, z);
-        seat.localPosition = hipPosition;
+        Vector3 hipPosition = seat.localPosition;
         seatPoints[index] = hipPosition;
-        seat.localRotation = Quaternion.Euler(0f, index == 0 ? 74f : 106f, 0f);
-        GameObject figure = Object.Instantiate(source, seat, false);
-        figure.transform.localPosition = Vector3.zero;
-        figure.transform.localRotation = Quaternion.identity;
-        LivingRoomGuests.FitModel(figure.transform, 1.30f);
+        if (authoring)
+        {
+            sitting.SampleAnimation(figure, sitting.length * (index == 0 ? 0.13f : 0.57f));
+            var previewAnimator = figure.GetComponentInChildren<Animator>();
+            if (previewAnimator != null && previewAnimator.isHuman)
+                seat.localPosition += hipPosition
+                    - guestGroup.InverseTransformPoint(previewAnimator.GetBoneTransform(HumanBodyBones.Hips).position);
+            return;
+        }
 
         Animator animator = figure.GetComponentInChildren<Animator>();
+        if (!ownsGuests && animator != null && animator.isHuman)
+        {
+            Transform authoredHips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            if (authoredHips != null)
+                seatPoints[index] = guestGroup.InverseTransformPoint(authoredHips.position);
+        }
+
         if (useMixamo && animator != null)
         {
             var motion = new PartyMotion(animator);
@@ -94,7 +137,7 @@ internal sealed class LivingRoomCouch
                 arms[index] = bone;
         }
         if (hips != null)
-            seat.localPosition += hipPosition - group.transform.InverseTransformPoint(hips.position);
+            seat.localPosition += hipPosition - guestGroup.InverseTransformPoint(hips.position);
         if (heads[index] != null)
             headRest[index] = heads[index].localRotation;
         if (arms[index] != null)
@@ -123,7 +166,7 @@ internal sealed class LivingRoomCouch
                 continue;
             motions[i].Update(elapsed);
             if (pelvis[i] != null)
-                seats[i].localPosition += seatPoints[i] - group.transform.InverseTransformPoint(pelvis[i].position);
+                seats[i].localPosition += seatPoints[i] - guestGroup.InverseTransformPoint(pelvis[i].position);
             if (heads[i] != null)
                 headRest[i] = heads[i].localRotation;
         }
@@ -154,6 +197,7 @@ internal sealed class LivingRoomCouch
     {
         foreach (PartyMotion motion in motions) motion?.Dispose();
         Object.Destroy(group);
+        if (ownsGuests) Object.Destroy(guestGroup.gameObject);
         Object.Destroy(bowlMaterial);
         Object.Destroy(popcornMaterial);
     }
