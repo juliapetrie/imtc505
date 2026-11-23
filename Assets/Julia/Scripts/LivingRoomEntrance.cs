@@ -4,7 +4,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 internal sealed class LivingRoomEntrance
 {
-    private const float DoorLeft = -1.372f;
+    private const float DoorCenter = -1.4255f;
+    private const float DoorLeft = DoorCenter - 0.36f;
     private const float Floor = -0.475f;
     private const float WallZ = -1.375f;
     private readonly Transform room;
@@ -52,8 +53,6 @@ internal sealed class LivingRoomEntrance
             originalDoorRotation = door.localRotation;
             hinge = Child("Door Hinge", new Vector3(DoorLeft, Floor, WallZ));
             door.SetParent(hinge, true);
-            // The imported doorway is shorter than the XR rig's standing capsule.
-            hinge.localScale = new Vector3(1f, 1.46f, 1f);
             var leaf = door.gameObject.AddComponent<BoxCollider>();
             leaf.center = door.GetComponent<MeshFilter>().sharedMesh.bounds.center;
             leaf.size = door.GetComponent<MeshFilter>().sharedMesh.bounds.size;
@@ -62,7 +61,7 @@ internal sealed class LivingRoomEntrance
             knock.selectEntered.AddListener(_ => Knock());
         }
 
-        Transform instructions = Child("Knock Prompt", new Vector3(-1.117f, 0.73f, -1.60f));
+        Transform instructions = Child("Knock Prompt", new Vector3(DoorCenter, 0.73f, -1.60f));
         prompt = instructions.gameObject.AddComponent<TextMesh>();
         prompt.anchor = TextAnchor.MiddleCenter;
         prompt.alignment = TextAlignment.Center;
@@ -114,7 +113,7 @@ internal sealed class LivingRoomEntrance
 
     private static bool NearDoor(Vector3 player)
     {
-        return player.z < -1.30f && player.z > -3.10f && Mathf.Abs(player.x + 1.117f) < 0.95f;
+        return player.z < -1.30f && player.z > -3.10f && Mathf.Abs(player.x - DoorCenter) < 0.95f;
     }
 
     public void Update(float dt, float partyPhase)
@@ -171,7 +170,7 @@ internal sealed class LivingRoomEntrance
         {
             prompt.text = message;
             prompt.transform.localPosition = !entered
-                ? new Vector3(-1.117f, 0.73f, -1.60f)
+                ? new Vector3(DoorCenter, 0.73f, -1.60f)
                 : host.localPosition + Vector3.up * 1.42f;
             Vector3 view = prompt.transform.position - player.transform.position;
             if (view.sqrMagnitude > 0.01f)
