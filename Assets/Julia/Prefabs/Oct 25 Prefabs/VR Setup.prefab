@@ -97,26 +97,6 @@ Transform:
   - {fileID: 1779659404856843833}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6925974352490133654
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5795999533746659379}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fbad5e5eb344dd6acaf2092bb579c6c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HandshakePlayerAvatar
-  headset: {fileID: 1109565968795862885}
-  leftController: {fileID: 1109565969412024071}
-  rightController: {fileID: 1109565968950732774}
-  rightHandModel: {fileID: 4587603879310307863}
-  bodyModel: {fileID: 919132149155446097, guid: 8c7bc2a25b428f448b8a04433a92c95d, type: 3}
-  bodyScale: 0.43
-  torsoBackOffset: 0.12
-  eyeAboveHeadBone: 0.1
 --- !u!1 &7184071738959170130
 GameObject:
   m_ObjectHideFlags: 0
@@ -171,6 +151,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8064751773409596799}
     m_Modifications:
+    - target: {fileID: 153982007679157697, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1680501587, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -207,10 +191,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 187.303
       objectReference: {fileID: 0}
-    - target: {fileID: 153982007679157697, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 301795087161766040, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -224,12 +204,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1178791450436251564, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-      propertyPath: m_CameraYOffset
-      value: 1.95
-      objectReference: {fileID: 0}
-    - target: {fileID: 1178791450436251564, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_RequestedTrackingOriginMode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1178791450436251564, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+      propertyPath: m_CameraYOffset
+      value: 1.95
       objectReference: {fileID: 0}
     - target: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
       propertyPath: m_Name
@@ -323,11 +303,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 5027224816561477794}
   m_SourcePrefab: {fileID: 100100000, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
---- !u!4 &1109565968795862885 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1767192434, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
-  m_PrefabInstance: {fileID: 1109565969478823959}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1109565968795862886 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1767192433, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
@@ -630,4 +605,29 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c5d7cf79f5ad0224fa1ea15db58cbc9c, type: 3}
   m_PrefabInstance: {fileID: 4487716309132818659}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6925974352490133654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5795999533746659379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fbad5e5eb344dd6acaf2092bb579c6c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::HandshakePlayerAvatar
+  headset: {fileID: 1109565968795862885}
+  leftController: {fileID: 1109565969412024071}
+  rightController: {fileID: 1109565968950732774}
+  rightHandModel: {fileID: 4587603879310307863}
+  bodyModel: {fileID: 919132149155446097, guid: 8c7bc2a25b428f448b8a04433a92c95d, type: 3}
+  bodyScale: 0.43
+  torsoBackOffset: 0.12
+  eyeAboveHeadBone: 0.1
+--- !u!4 &1109565968795862885 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1767192434, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
+  m_PrefabInstance: {fileID: 1109565969478823959}
   m_PrefabAsset: {fileID: 0}
