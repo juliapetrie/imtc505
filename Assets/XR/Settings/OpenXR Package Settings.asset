@@ -91,6 +91,29 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &-7694768425461038403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e314dfef9af0904e80129bcc0a79361, type: 3}
+  m_Name: HandTracking Standalone
+  m_EditorClassIdentifier: Unity.XR.Hands::UnityEngine.XR.Hands.OpenXR.HandTracking
+  m_enabled: 0
+  nameUi: Hand Tracking Subsystem
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingsubsystem
+  openxrExtensionStrings: XR_EXT_hand_tracking
+  company: Unity
+  priority: -100
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+  m_AutoStartSubsystem: 1
 --- !u!114 &-7667170546133514370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,6 +229,28 @@ MonoBehaviour:
   customRuntimeLoaderName: 
   targetQuest: 1
   targetQuest2: 1
+--- !u!114 &-6509630734775926982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3aced3429e5911458f4da2dac9d0f29, type: 3}
+  m_Name: MetaHandTrackingAim Standalone
+  m_EditorClassIdentifier: Unity.XR.Hands::UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim
+  m_enabled: 0
+  nameUi: Meta Hand Tracking Aim
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metahandtrackingaim
+  openxrExtensionStrings: XR_FB_hand_tracking_aim
+  company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &-6212218680711388828
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -606,6 +651,30 @@ MonoBehaviour:
   - {fileID: 7453933505908108281}
   - {fileID: 4448367100678800521}
   - {fileID: 4315895673104554774}
+--- !u!114 &496146585897934961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61b9faa4029cc43c6a88d12cc2c8dd36, type: 3}
+  m_Name: HandTrackingDataSourceFeature Standalone
+  m_EditorClassIdentifier: Unity.XR.Hands::UnityEngine.XR.Hands.OpenXR.HandTrackingDataSourceFeature
+  m_enabled: 0
+  nameUi: Hand Tracking Data Source
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingdatasource
+  openxrExtensionStrings: XR_EXT_hand_tracking_data_source
+  company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+  m_LeftHandPreference: 2
+  m_RightHandPreference: 2
 --- !u!114 &1823322483087173570
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -852,11 +921,11 @@ MonoBehaviour:
   - {fileID: -7738139891709658514}
   - {fileID: 5490861107693396278}
   - {fileID: -4538133781037860855}
-  - {fileID: 5194599473344813762}
-  - {fileID: -2058639180648443449}
-  - {fileID: 6504570859540894688}
-  - {fileID: -6212218680711388828}
-  - {fileID: -5373643189323991667}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   customLoaderName: 
   m_renderMode: 1
   m_latencyOptimization: 0
@@ -986,6 +1055,30 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &5193684275564877111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8acf31d570ace44d0ba5edaa735e3a80, type: 3}
+  m_Name: HandJointsMotionRangeFeature Standalone
+  m_EditorClassIdentifier: Unity.XR.Hands::UnityEngine.XR.Hands.OpenXR.HandJointsMotionRangeFeature
+  m_enabled: 0
+  nameUi: Hand Joints Motion Range
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.handjointsmotionrange
+  openxrExtensionStrings: XR_EXT_hand_joints_motion_range
+  company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+  m_LeftMotionRange: 1
+  m_RightMotionRange: 1
 --- !u!114 &5194599473344813762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1296,32 +1389,32 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -1930591939103577518}
-  - {fileID: 3820124026821184873}
-  - {fileID: 4962815524272464105}
-  - {fileID: 4994472079668401930}
-  - {fileID: 2389822919898144327}
-  - {fileID: 8283839901964309260}
   - {fileID: 3366988529945388067}
-  - {fileID: 1994324047469164277}
-  - {fileID: 4029530033199482562}
-  - {fileID: 6880786834766153996}
-  - {fileID: -5338634541857952650}
-  - {fileID: 9093141423718266997}
-  - {fileID: -7667170546133514370}
-  - {fileID: -1971515617103012817}
+  - {fileID: 4962815524272464105}
+  - {fileID: 8283839901964309260}
   - {fileID: 4762497147431718198}
-  - {fileID: 7978209315289093533}
-  - {fileID: -683487285412977664}
-  - {fileID: -61744456746887497}
-  - {fileID: -8406450524990847625}
   - {fileID: 1823322483087173570}
+  - {fileID: 2389822919898144327}
+  - {fileID: 4029530033199482562}
+  - {fileID: -8406450524990847625}
+  - {fileID: 6880786834766153996}
+  - {fileID: 1994324047469164277}
+  - {fileID: -61744456746887497}
+  - {fileID: -7667170546133514370}
+  - {fileID: 9093141423718266997}
   - {fileID: 2291807191623215175}
-  - {fileID: -4565379259152843916}
-  - {fileID: 3473379758374014508}
-  - {fileID: -7104126597998737163}
-  - {fileID: -8894812751764320994}
-  - {fileID: 6415267676049621127}
+  - {fileID: 7978209315289093533}
+  - {fileID: 3820124026821184873}
+  - {fileID: -5338634541857952650}
+  - {fileID: -1971515617103012817}
+  - {fileID: -1930591939103577518}
+  - {fileID: 4994472079668401930}
+  - {fileID: -683487285412977664}
+  - {fileID: 8119077542159414006}
+  - {fileID: -7694768425461038403}
+  - {fileID: -6509630734775926982}
+  - {fileID: 496146585897934961}
+  - {fileID: 5193684275564877111}
   customLoaderName: 
   m_renderMode: 1
   m_latencyOptimization: 0
@@ -1383,6 +1476,28 @@ MonoBehaviour:
   customRuntimeLoaderName: 
   cacheSize: 1048576
   perThreadCacheSize: 51200
+--- !u!114 &8119077542159414006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96e71d1e1374c4691a129d102bd751e4, type: 3}
+  m_Name: MetaOpenXRHandMeshData Standalone
+  m_EditorClassIdentifier: Unity.XR.OpenXR.Features.MetaHandMeshData::UnityEngine.XR.OpenXR.Features.Meta.MetaOpenXRHandMeshData
+  m_enabled: 0
+  nameUi: 'Meta Quest: Hand Mesh Data'
+  version: 0.1.0
+  featureIdInternal: com.unity.openxr.feature.metahandmeshdata
+  openxrExtensionStrings: XR_FB_hand_tracking_mesh
+  company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &8283839901964309260
 MonoBehaviour:
   m_ObjectHideFlags: 0

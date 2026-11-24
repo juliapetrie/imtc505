@@ -80,7 +80,7 @@ public class CampusProgress : MonoBehaviour
     [Header("Mist and clouds (optional)")]
     [Tooltip("Particle systems for low-lying mist. Place them around the campus.")]
     public ParticleSystem[] mistSystems;
-    [Tooltip("A big inside-out dome or sphere with an unlit, transparent cloud texture.")]
+    [Tooltip("A big sphere with the Campus/Cloud Dome material on it.")]
     public Renderer cloudDome;
 
     [Header("Lamp glow")]
@@ -99,7 +99,7 @@ public class CampusProgress : MonoBehaviour
     public StageObject[] stageObjects;
 
     [Header("Spatial spread")]
-    [Tooltip("Where the change starts. Leave empty to use the portal you last used.")]
+    [Tooltip("Where the change starts. Leave empty to use the portal you last used (or, when testing, where the camera is).")]
     public Transform revealOrigin;
     [Tooltip("How fast the change spreads outward, in metres per second. 0 = everything changes together.")]
     public float revealSpeed = 6f;
@@ -113,8 +113,15 @@ public class CampusProgress : MonoBehaviour
     public float transitionDuration = 4f;
 
     [Header("Testing")]
-    [Tooltip("-1 = real progress. 0 to 3 = force that stage (Play mode only).")]
+    [Tooltip("-1 = real progress. 0 to 3 = force that stage. You can change this while the game is running.")]
     public int debugStage = -1;
+    [Tooltip("When Debug Stage changes in Play mode, play the smooth spreading blend instead of jumping. The wave starts from Reveal Origin, or from where the camera is.")]
+    public bool playBlendOnDebugChange = true;
+
+    bool _ready;
+    bool _transitioning;
+    int _debugApplied = -2;
+    int _shownStage;
 
     Material _sky;
     Material _cloudMat;
@@ -124,6 +131,7 @@ public class CampusProgress : MonoBehaviour
 
     float[] _lampLightBase;
     float[] _lampLightDist;
+    readonly List<Renderer> _lampMatRenderers = new List<Renderer>();
     readonly List<Material> _lampMats = new List<Material>();
     readonly List<float> _lampMatDist = new List<float>();
 
@@ -191,10 +199,13 @@ public class CampusProgress : MonoBehaviour
         }
 
         CacheReferences();
+        _ready = true;
 
         int last = stages.Length - 1;
         int target = Mathf.Clamp(debugStage >= 0 ? debugStage : GameState.MemoriesCompleted, 0, last);
         int from = Mathf.Clamp(Mathf.Min(GameState.AppliedStage, target), 0, last);
+        _debugApplied = debugStage >= 0 ? target : -2;
+        _shownStage = from;
 
         // Make sure the fog and ambient settings below actually take effect.
         RenderSettings.fog = true;
@@ -205,25 +216,85 @@ public class CampusProgress : MonoBehaviour
         Apply(stages[from], stages[from], 0f, 0f);
         SetStageObjects(from);
 
+        // Testing with Debug Stage never changes the saved progress.
+        bool save = debugStage < 0;
+
         if (from == target)
         {
-            GameState.AppliedStage = target;
+            _shownStage = target;
+            if (save) GameState.AppliedStage = target;
             return;
         }
 
-        StartCoroutine(Transition(from, target));
+        StartCoroutine(Transition(from, target, startDelay, save));
     }
 
     void Update()
     {
+        // Live testing: while Debug Stage is 0 or higher, the campus follows it.
+        if (_ready && debugStage >= 0)
+        {
+            int s = Mathf.Clamp(debugStage, 0, stages.Length - 1);
+
+            if (s != _debugApplied)
+            {
+                int previous = _shownStage;
+                _debugApplied = s;
+                StopAllCoroutines();
+                _transitioning = false;
+
+                if (playBlendOnDebugChange && previous != s)
+                {
+                    PlayBlend(previous, s);
+                }
+                else
+                {
+                    SetStageObjects(s);
+                    _shownStage = s;
+                }
+            }
+
+            // Keeps the look in step with any edits you make to the stage in the Inspector.
+            if (!_transitioning) Apply(stages[s], stages[s], 0f, 0f);
+        }
+
         // Drift the clouds.
         if (_cloudMat != null && _cloudSpeed != 0f)
             _cloudMat.mainTextureOffset += new Vector2(_cloudSpeed * Time.deltaTime, 0f);
     }
 
-    IEnumerator Transition(int from, int to)
+    /// <summary>Right-click the component header in Play mode to run this.</summary>
+    [ContextMenu("Replay Blend From Previous Stage")]
+    void ReplayBlend()
     {
-        yield return new WaitForSeconds(startDelay);
+        if (!Application.isPlaying || !_ready) return;
+
+        int s = Mathf.Clamp(debugStage >= 0 ? debugStage : GameState.MemoriesCompleted, 0, stages.Length - 1);
+        int from = Mathf.Max(0, s - 1);
+
+        StopAllCoroutines();
+        _transitioning = false;
+        _debugApplied = debugStage >= 0 ? s : -2;
+
+        PlayBlend(from, s);
+    }
+
+    // Starts the spreading blend for testing, from where the camera (or Reveal Origin) is.
+    void PlayBlend(int from, int to)
+    {
+        _origin = GetPreviewOrigin();
+        RecalculateDistances();
+
+        Apply(stages[from], stages[from], 0f, 0f);
+        SetStageObjects(from);
+        StartCoroutine(Transition(from, to, 0f, false));
+    }
+
+    IEnumerator Transition(int from, int to, float delay, bool saveProgress)
+    {
+        _transitioning = true;
+        _shownStage = to;
+        if (delay > 0f) yield return new WaitForSeconds(delay);
 
         var a = stages[from];
         var b = stages[to];
@@ -242,7 +313,8 @@ public class CampusProgress : MonoBehaviour
         Apply(b, b, 0f, 0f);
         SetStageObjects(to);
         DynamicGI.UpdateEnvironment(); // refresh ambient/reflections once at the end
-        GameState.AppliedStage = to;
+        if (saveProgress) GameState.AppliedStage = to;
+        _transitioning = false;
     }
 
     // ---------------------------------------------------------------- setup
@@ -255,6 +327,14 @@ public class CampusProgress : MonoBehaviour
         return cam != null ? cam.transform.position : Vector3.zero;
     }
 
+    // For testing: ignore any saved portal position.
+    Vector3 GetPreviewOrigin()
+    {
+        if (revealOrigin != null) return revealOrigin.position;
+        var cam = Camera.main;
+        return cam != null ? cam.transform.position : Vector3.zero;
+    }
+
     float FlatDistance(Vector3 p)
     {
         return Vector2.Distance(new Vector2(p.x, p.z), new Vector2(_origin.x, _origin.z));
@@ -263,7 +343,6 @@ public class CampusProgress : MonoBehaviour
     void CacheReferences()
     {
         _origin = GetOrigin();
-        _maxDist = 0f;
 
         // Work on copies so we never change the skybox/material assets in your project.
         if (RenderSettings.skybox != null)
@@ -280,12 +359,7 @@ public class CampusProgress : MonoBehaviour
         _lampLightBase = new float[lightCount];
         _lampLightDist = new float[lightCount];
         for (int i = 0; i < lightCount; i++)
-        {
-            if (lampLights[i] == null) continue;
-            _lampLightBase[i] = lampLights[i].intensity;
-            _lampLightDist[i] = FlatDistance(lampLights[i].transform.position);
-            _maxDist = Mathf.Max(_maxDist, _lampLightDist[i]);
-        }
+            if (lampLights[i] != null) _lampLightBase[i] = lampLights[i].intensity;
 
         // Lamp glow materials
         if (lampRenderers != null)
@@ -295,10 +369,9 @@ public class CampusProgress : MonoBehaviour
                 if (r == null) continue;
                 var m = r.material; // makes a per-renderer copy
                 m.EnableKeyword("_EMISSION");
-                float d = FlatDistance(r.transform.position);
+                _lampMatRenderers.Add(r);
                 _lampMats.Add(m);
-                _lampMatDist.Add(d);
-                _maxDist = Mathf.Max(_maxDist, d);
+                _lampMatDist.Add(0f);
             }
         }
 
@@ -312,8 +385,6 @@ public class CampusProgress : MonoBehaviour
             var ps = mistSystems[i];
             if (ps == null) continue;
             _mistBaseRate[i] = ps.emission.rateOverTimeMultiplier;
-            _mistDist[i] = FlatDistance(ps.transform.position);
-            _maxDist = Mathf.Max(_maxDist, _mistDist[i]);
             var psr = ps.GetComponent<ParticleSystemRenderer>();
             if (psr != null) _mistMats[i] = psr.material;
         }
@@ -321,7 +392,36 @@ public class CampusProgress : MonoBehaviour
         // Stage objects
         int objCount = stageObjects != null ? stageObjects.Length : 0;
         _stageObjDist = new float[objCount];
-        for (int i = 0; i < objCount; i++)
+
+        RecalculateDistances();
+    }
+
+    // How far each lamp, patch of mist and stage object is from the origin of the wave.
+    void RecalculateDistances()
+    {
+        _maxDist = 0f;
+
+        for (int i = 0; i < _lampLightDist.Length; i++)
+        {
+            if (lampLights[i] == null) continue;
+            _lampLightDist[i] = FlatDistance(lampLights[i].transform.position);
+            _maxDist = Mathf.Max(_maxDist, _lampLightDist[i]);
+        }
+
+        for (int i = 0; i < _lampMatRenderers.Count; i++)
+        {
+            _lampMatDist[i] = FlatDistance(_lampMatRenderers[i].transform.position);
+            _maxDist = Mathf.Max(_maxDist, _lampMatDist[i]);
+        }
+
+        for (int i = 0; i < _mistDist.Length; i++)
+        {
+            if (mistSystems[i] == null) continue;
+            _mistDist[i] = FlatDistance(mistSystems[i].transform.position);
+            _maxDist = Mathf.Max(_maxDist, _mistDist[i]);
+        }
+
+        for (int i = 0; i < _stageObjDist.Length; i++)
         {
             if (stageObjects[i] == null || stageObjects[i].target == null) continue;
             _stageObjDist[i] = FlatDistance(stageObjects[i].target.transform.position);
