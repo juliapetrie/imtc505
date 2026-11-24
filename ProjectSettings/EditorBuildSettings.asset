@@ -5,6 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+  - enabled: 1
+    path: Assets/Julia/Scenes/Title.unity
+    guid: 018424c0d22b2a441995151cb473194b
+  - enabled: 1
+    path: Assets/Julia/Scenes/Tutorial.unity
+    guid: 2b50b6942cb846efa6e23cf86625fc61
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
