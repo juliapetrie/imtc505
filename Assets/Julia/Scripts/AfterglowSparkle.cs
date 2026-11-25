@@ -16,12 +16,21 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 /// Needs a collider for the XR rays/hands to hit. If the object has no interactable, an
 /// XRSimpleInteractable (and a BoxCollider, if needed) is added automatically.
 /// Other scripts can call <see cref="Ignite"/> directly, or <see cref="IgniteOn"/> for any GameObject.
+///
+/// The effect stays switched off until the player has completed <see cref="requiredMemories"/> memories
+/// (see GameState). AfterglowSparkleGroup can add this to many props at once and copy a template's settings.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class AfterglowSparkle : MonoBehaviour
 {
     // TouchOnly is last so scenes saved with the older options keep their setting.
     public enum Trigger { HoverOrSelect, SelectOnly, ScriptOnly, TouchOnly }
+
+    [Header("Unlock")]
+    [Tooltip("How many memories the player must finish before this can sparkle. 0 = always on.")]
+    [SerializeField, Min(0)] private int requiredMemories = 3;
+    [Tooltip("For testing: sparkle regardless of how many memories are finished.")]
+    [SerializeField] private bool ignoreRequirement = false;
 
     [Header("When it sparkles")]
     [Tooltip("Touch Only: a hand has to reach the object (pointing a ray from afar does nothing).\n" +
@@ -48,8 +57,12 @@ public sealed class AfterglowSparkle : MonoBehaviour
              "Assign one if sparkles render pink in a headset build (shader stripped).")]
     [SerializeField] private Material materialOverride;
 
-    // More parts than this and only the largest ones sparkle (keeps big props cheap).
-    private const int MaxEmitters = 24;
+    [Header("Performance")]
+    [Tooltip("Most parts that get their own sparkles. The largest parts go first; the rest are skipped.")]
+    [SerializeField, Min(1)] private int maxEmitters = 24;
+    [Tooltip("Skip parts with less surface area than this (square metres). 0 = keep every part. " +
+             "The largest part is always kept.")]
+    [SerializeField, Min(0f)] private float minPartArea = 0f;
 
     private static Material sharedMaterial;
     private static Texture2D starTexture;
@@ -61,6 +74,8 @@ public sealed class AfterglowSparkle : MonoBehaviour
     }
 
     private readonly List<Emitter> emitters = new();
+    private bool awoken;            // Awake has run (settings copied later need a rebuild)
+    private bool initialized;       // unlocked, built, and hooked up to an interactable
     private bool built;
     private XRBaseInteractable interactable;
     private float fullRate;
@@ -69,6 +84,8 @@ public sealed class AfterglowSparkle : MonoBehaviour
     private int activeHolds;        // hovers/selects currently on us
     private bool touched;
     private bool handTouching;      // TouchOnly: a hand is within touchDistance right now
+
+    private bool Unlocked => ignoreRequirement || GameState.MemoriesCompleted >= requiredMemories;
 
     /// <summary>Sparkle any object, adding the component if it isn't there yet.</summary>
     public static AfterglowSparkle IgniteOn(GameObject target)
@@ -83,6 +100,7 @@ public sealed class AfterglowSparkle : MonoBehaviour
     [ContextMenu("Ignite (preview)")]
     public void Ignite()
     {
+        if (!Unlocked) return;
         Build();
         touched = true;
         level = 1f;
@@ -92,8 +110,33 @@ public sealed class AfterglowSparkle : MonoBehaviour
             emitter.system.Emit(Mathf.CeilToInt(burst * emitter.share));
     }
 
+    /// <summary>
+    /// Copies another sparkle's settings onto this one. Used by AfterglowSparkleGroup so every prop
+    /// can share the settings of a template that was edited in the Editor.
+    /// </summary>
+    public void ApplySettingsFrom(AfterglowSparkle template)
+    {
+        if (template == null || template == this) return;
+        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(template), this);
+
+        if (!awoken) return;                                // Awake hasn't run yet; it will use the new settings
+        if (initialized) { Rebuild(); return; }             // already set up: rebuild with the new look
+        if (Unlocked) { Initialize(); enabled = true; }     // locked itself with the old settings: reopen
+    }
+
     private void Awake()
     {
+        awoken = true;
+        Initialize();
+    }
+
+    // Does the one-time setup. Safe to call again: it does nothing once set up, and nothing while locked.
+    private void Initialize()
+    {
+        if (initialized) return;
+        if (!Unlocked) { enabled = false; return; }         // locked: no particles, no interactable
+        initialized = true;
+
         Build();
         if (trigger == Trigger.ScriptOnly) return;
 
@@ -103,6 +146,21 @@ public sealed class AfterglowSparkle : MonoBehaviour
             if (GetComponentInChildren<Collider>() == null) FitBoxCollider();
             interactable = gameObject.AddComponent<XRSimpleInteractable>();
         }
+    }
+
+    // Throws away the sparkles and builds them again with the current settings.
+    private void Rebuild()
+    {
+        foreach (var emitter in emitters)
+            if (emitter.system != null) Destroy(emitter.system.gameObject);
+        emitters.Clear();
+        built = false;
+        level = 0f;
+        Build();
+
+        // The trigger setting may have changed, so register the event listeners again.
+        OnDisable();
+        if (isActiveAndEnabled && trigger != Trigger.ScriptOnly) OnEnable();
     }
 
     private void OnEnable()
@@ -207,7 +265,15 @@ public sealed class AfterglowSparkle : MonoBehaviour
 
         // Largest parts first; area decides each part's share of the sparkles.
         parts.Sort((a, b) => SurfaceArea(b.bounds).CompareTo(SurfaceArea(a.bounds)));
-        if (parts.Count > MaxEmitters) parts.RemoveRange(MaxEmitters, parts.Count - MaxEmitters);
+
+        // Drop tiny parts (the largest is always kept), then cap how many parts get an emitter.
+        if (minPartArea > 0f && parts.Count > 1)
+        {
+            var largest = parts[0];
+            parts.RemoveAll(p => p != largest && SurfaceArea(p.bounds) < minPartArea);
+        }
+        if (parts.Count > maxEmitters) parts.RemoveRange(maxEmitters, parts.Count - maxEmitters);
+
         float totalArea = 0f;
         foreach (var part in parts) totalArea += SurfaceArea(part.bounds);
 
