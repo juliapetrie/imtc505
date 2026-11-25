@@ -1,11 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Afterglow.Tutorial
+namespace Afterglow.SimpleTutorial
 {
     // Actual UI geometry: no texture, no SVG importer or third-party package required.
-    [AddComponentMenu("UI/Afterglow Vector Graphic")]
-    public sealed class AfterglowVectorGraphic : MaskableGraphic
+    [AddComponentMenu("UI/Afterglow Simple Tutorial Vector Graphic")]
+    public sealed class SimpleTutorialVectorGraphic : MaskableGraphic
     {
         [SerializeField] private Vector2[] vertices;
         [SerializeField] private int[] triangles;
