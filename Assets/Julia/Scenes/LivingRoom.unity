@@ -14862,7 +14862,8 @@ MonoBehaviour:
   speakerTravel: 0.22
   musicSource: {fileID: 0}
   secondMusicSource: {fileID: 0}
-  songChoices: []
+  songChoices:
+  - {fileID: 8300000, guid: 268c1c48b47014a999205f0ef1dfff5b, type: 3}
   roomModel: {fileID: 333698925}
   exteriorWindowPanes:
   - {fileID: 650000113}
