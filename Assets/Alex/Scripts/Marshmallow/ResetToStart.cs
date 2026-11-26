@@ -36,11 +36,17 @@ public class ResetToStart : MonoBehaviour
 
     public void ResetNow()
     {
-        if (resetting) return;
-        StartCoroutine(ResetRoutine());
+        ResetNow(resetMarshmallowColour);
     }
 
-    IEnumerator ResetRoutine()
+    // Use ResetNow(false) to send the stick back but keep the marshmallow's cooking.
+    public void ResetNow(bool resetColour)
+    {
+        if (resetting) return;
+        StartCoroutine(ResetRoutine(resetColour));
+    }
+
+    IEnumerator ResetRoutine(bool resetColour)
     {
         resetting = true;
 
@@ -67,7 +73,7 @@ public class ResetToStart : MonoBehaviour
         transform.SetPositionAndRotation(startPos, startRot);
         if (rollPivot != null) { rollPivot.localPosition = pivotPos; rollPivot.localRotation = pivotRot; }
 
-        if (resetMarshmallowColour) ResetMarshmallows();
+        if (resetColour) ResetMarshmallows();
 
         // Stay put at the start (same behaviour as RestWhenDropped at the beginning of the scene).
         if (GetComponent<RestWhenDropped>() != null) rb.isKinematic = true;
