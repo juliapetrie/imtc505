@@ -2,7 +2,6 @@
   "dependencies": {
     "com.unity.ai.inference": "2.6.1",
     "com.unity.ai.navigation": "2.0.16",
-    "com.unity.cloud.gltfast": "6.20.0",
     "com.unity.animation.rigging": "6.6.0",
     "com.unity.cloud.gltfast": "6.21.0",
     "com.unity.collab-proxy": "2.13.6",

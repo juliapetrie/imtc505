@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using TMPro;
 using System.Collections;
@@ -29,18 +30,12 @@ public class BasketballGameManager : MonoBehaviour
     private bool scoredThisShot;
 
     private float upperPassTime;
-    private float resetDeadline = float.PositiveInfinity;
+    private float resetDeadline =
+        float.PositiveInfinity;
 
     private void Start()
     {
         UpdateScoreText();
-
-        // Ensure the celebration effect is hidden until the first score.
-        if (scoreEffect != null)
-        {
-            scoreEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-
         ResetBall();
     }
 
@@ -63,13 +58,17 @@ public class BasketballGameManager : MonoBehaviour
         if (!inFlight)
             return;
 
-        Vector3 difference = ball.position - spawnPoint.position;
+        Vector3 difference =
+            ball.position - spawnPoint.position;
 
         // Horizontal distance, ignoring height.
         difference.y = 0f;
 
-        bool outOfBounds = difference.magnitude > maxDistanceFromSpawn;
-        bool fellBelowGround = ball.position.y < resetBelowY;
+        bool outOfBounds =
+            difference.magnitude > maxDistanceFromSpawn;
+
+        bool fellBelowGround =
+            ball.position.y < resetBelowY;
 
         if (outOfBounds || fellBelowGround)
         {
@@ -95,6 +94,7 @@ public class BasketballGameManager : MonoBehaviour
         Debug.Log("Basketball grabbed");
     }
 
+    
     public void OnBallReleased()
     {
         isHeld = false;
@@ -117,6 +117,7 @@ public class BasketballGameManager : MonoBehaviour
 
         Debug.Log("Basketball released");
     }
+
 
     private IEnumerator VerifyReleasePhysics()
     {
@@ -177,12 +178,8 @@ public class BasketballGameManager : MonoBehaviour
         score++;
         UpdateScoreText();
 
-        // Restart the one-shot particle burst for this basket.
         if (scoreEffect != null)
-        {
-            scoreEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            scoreEffect.Play(true);
-        }
+            scoreEffect.Play();
 
         if (scoreSound != null)
             scoreSound.Play();
@@ -192,6 +189,7 @@ public class BasketballGameManager : MonoBehaviour
         Debug.Log("Basket scored! Total: " + score);
     }
 
+    
     public void ResetBall()
     {
         if (ball == null || spawnPoint == null || isHeld)
@@ -219,25 +217,30 @@ public class BasketballGameManager : MonoBehaviour
         ball.rotation = spawnPoint.rotation;
     }
 
+
     private void FixedUpdate()
     {
         if (ball == null || spawnPoint == null)
             return;
 
-        // Let XR Interaction Toolkit control the ball while it is held.
+        // Let XR Interaction Toolkit control the ball
+        // while the player is holding it.
         if (isHeld)
             return;
 
-        // Ball has been released or has just scored; obey normal physics.
+        // Ball has been released or has just scored.
+        // It must obey normal physics.
         if (inFlight || scoredThisShot)
         {
             ball.isKinematic = false;
             ball.constraints = RigidbodyConstraints.None;
             ball.useGravity = true;
+
             return;
         }
 
-        // Waiting for the next shot: keep the ball at its spawn position.
+        // Waiting for the next shot:
+        // keep the ball at its spawn position.
         ball.isKinematic = false;
         ball.constraints = RigidbodyConstraints.None;
         ball.useGravity = false;
@@ -252,6 +255,6 @@ public class BasketballGameManager : MonoBehaviour
     private void UpdateScoreText()
     {
         if (scoreText != null)
-            scoreText.text = score.ToString("00");
+            scoreText.text = "SCORE: " + score;
     }
 }
