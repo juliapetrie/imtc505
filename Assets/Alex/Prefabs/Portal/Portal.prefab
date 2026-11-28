@@ -156,6 +156,9 @@ MonoBehaviour:
   returnPoint: {fileID: 0}
   completesMemory: 0
   memoryId: Memory_1
+  detectByPosition: 1
+  detectionPoint: {fileID: 0}
+  logDebug: 0
   enterSound: {fileID: 0}
 --- !u!73398921 &3701977543992774071
 VFXRenderer:
